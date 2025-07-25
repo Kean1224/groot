@@ -1,0 +1,24 @@
+{
+  "name": "all4you-backend",
+  "version": "1.0.0",
+  "description": "Backend for All4You Auctioneers - includes admin panel, API routes, file uploads, and data logic.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node index.js",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "fs-extra": "^11.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^7.0.5",
+    "uuid": "^9.0.1"
+  },
+  "keywords": [],
+  "author": "All4You Auctions",
+  "license": "ISC"
+}
