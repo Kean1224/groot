@@ -1,5 +1,3 @@
-const depositsRouter = require('./api/deposits/index');
-app.use('/api/deposits', depositsRouter);
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -7,7 +5,9 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
+const depositsRouter = require('./api/deposits/index');
 const PORT = 5000;
+app.use('/api/deposits', depositsRouter);
 
 // Middleware
 app.use(cors());

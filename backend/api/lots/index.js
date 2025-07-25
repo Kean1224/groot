@@ -1,3 +1,12 @@
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
+const { v4: uuidv4 } = require('uuid');
+const authenticateToken = require('../../middleware/auth');
+const { sendMail } = require('../../utils/mailer');
+const router = express.Router();
+
 // ✅ POST: End auction with per-lot stagger and sniper protection
 router.post('/:auctionId/end', async (req, res) => {
   const { auctionId } = req.params;
@@ -78,16 +87,6 @@ router.post('/:auctionId/end', async (req, res) => {
 
   res.json({ message: 'Auction lots scheduled to end with stagger and sniper protection.', lotEndTimes });
 });
-const { sendMail } = require('../../utils/mailer');
-
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const multer = require('multer');
-const { v4: uuidv4 } = require('uuid');
-const authenticateToken = require('../../middleware/auth');
-
-const router = express.Router();
 const auctionsPath = path.join(__dirname, '../../data/auctions.json');
 
 // Helper: Load & Save Auctions

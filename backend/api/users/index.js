@@ -1,30 +1,11 @@
-// ✅ POST: FICA re-upload (user can re-upload FICA docs if rejected or updating)
-router.post('/fica-reupload/:email', upload.fields([
-  { name: 'idDocument', maxCount: 1 },
-  { name: 'proofOfAddress', maxCount: 1 }
-]), (req, res) => {
-  const users = readUsers();
-  const email = decodeURIComponent(req.params.email);
-  const user = users.find(u => u.email === email);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-
-  // Overwrite FICA docs if provided
-  if (req.files.idDocument) {
-    user.idDocument = req.files.idDocument[0].filename;
-  }
-  if (req.files.proofOfAddress) {
-    user.proofOfAddress = req.files.proofOfAddress[0].filename;
-  }
-  user.ficaApproved = false; // Reset approval status
-  writeUsers(users);
-  res.json({ message: 'FICA documents re-uploaded. Pending admin review.', user });
-});
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
-
+const { v4: uuidv4 } = require('uuid');
+const authenticateToken = require('../../middleware/auth');
 const router = express.Router();
+
 const usersPath = path.join(__dirname, '../../data/users.json');
 const uploadDir = path.join(__dirname, '../../uploads/fica');
 
@@ -53,6 +34,73 @@ function readUsers() {
 function writeUsers(data) {
   fs.writeFileSync(usersPath, JSON.stringify(data, null, 2), 'utf-8');
 }
+
+// Ensure demo user exists
+function ensureDemoUser() {
+  const users = readUsers();
+  const demoExists = users.some(u => u.email === 'demo@example.com');
+
+  if (!demoExists) {
+    const demoUser = {
+      email: 'demo@example.com',
+      password: 'demo123',
+      name: 'Demo User',
+      ficaApproved: true,
+      suspended: false,
+      registeredAt: new Date().toISOString(),
+      idDocument: 'demo_id.pdf',
+      proofOfAddress: 'demo_proof.pdf',
+      watchlist: []
+    };
+    users.push(demoUser);
+    writeUsers(users);
+    console.log('✅ Demo user added.');
+  }
+}
+ensureDemoUser();
+
+// ✅ POST: FICA re-upload (user can re-upload FICA docs if rejected or updating)
+router.post('/fica-reupload/:email', upload.fields([
+  { name: 'idDocument', maxCount: 1 },
+  { name: 'proofOfAddress', maxCount: 1 }
+]), (req, res) => {
+  const users = readUsers();
+  const email = decodeURIComponent(req.params.email);
+  const user = users.find(u => u.email === email);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  // Overwrite FICA docs if provided
+  if (req.files.idDocument) {
+    user.idDocument = req.files.idDocument[0].filename;
+  }
+  if (req.files.proofOfAddress) {
+    user.proofOfAddress = req.files.proofOfAddress[0].filename;
+  }
+  user.ficaApproved = false; // Reset approval status
+  writeUsers(users);
+  res.json({ message: 'FICA documents re-uploaded. Pending admin review.', user });
+});
+// ✅ POST: FICA re-upload (user can re-upload FICA docs if rejected or updating)
+router.post('/fica-reupload/:email', upload.fields([
+  { name: 'idDocument', maxCount: 1 },
+  { name: 'proofOfAddress', maxCount: 1 }
+]), (req, res) => {
+  const users = readUsers();
+  const email = decodeURIComponent(req.params.email);
+  const user = users.find(u => u.email === email);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  // Overwrite FICA docs if provided
+  if (req.files.idDocument) {
+    user.idDocument = req.files.idDocument[0].filename;
+  }
+  if (req.files.proofOfAddress) {
+    user.proofOfAddress = req.files.proofOfAddress[0].filename;
+  }
+  user.ficaApproved = false; // Reset approval status
+  writeUsers(users);
+  res.json({ message: 'FICA documents re-uploaded. Pending admin review.', user });
+});
 
 // Ensure demo user exists
 function ensureDemoUser() {

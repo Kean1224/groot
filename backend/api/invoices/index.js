@@ -1,16 +1,17 @@
+
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const PDFDocument = require('pdfkit');
+const { v4: uuidv4 } = require('uuid');
+const router = express.Router();
+
 // GET: Download seller invoice PDF for a specific auction
 router.get('/seller/:email/auction/:auctionId/pdf', (req, res) => {
   const { email, auctionId } = req.params;
   const invoices = readInvoices().filter(inv =>
     inv.sellerEmail === email && (inv.auctionId === auctionId || inv.auctionTitle === auctionId)
   );
-  if (!invoices.length) return res.status(404).json({ error: 'No invoices for this seller in this auction.' });
-
-  // Use auction name as title (from first invoice)
-  const auctionTitle = invoices[0].auctionTitle || auctionId;
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="seller-invoice-${auctionTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}-${email}.pdf"`);
-  const PDFDocument = require('pdfkit');
   const doc = new PDFDocument();
   doc.pipe(res);
 
@@ -40,7 +41,6 @@ router.get('/buyer/:email/auction/:auctionId/pdf', (req, res) => {
   const auctionTitle = invoices[0].auctionTitle || auctionId;
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="invoice-${auctionTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}-${email}.pdf"`);
-  const PDFDocument = require('pdfkit');
   const doc = new PDFDocument();
   doc.pipe(res);
 
@@ -68,9 +68,8 @@ router.put('/:invoiceId/paid', (req, res) => {
   writeInvoices(invoices);
   res.json({ success: true, invoice: invoices[idx] });
 });
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
+
+
 // POST: Email all buyer and seller invoices for a given auction
 router.post('/email-invoices/:auctionId', async (req, res) => {
   const { auctionId } = req.params;
@@ -94,7 +93,6 @@ router.post('/email-invoices/:auctionId', async (req, res) => {
   // Helper to generate PDF buffer
   function generatePDF(title, invs, isSeller) {
     return new Promise((resolve, reject) => {
-      const PDFDocument = require('pdfkit');
       const doc = new PDFDocument();
       const bufs = [];
       doc.on('data', d => bufs.push(d));
@@ -182,10 +180,10 @@ router.get('/buyer/:email/pdf', (req, res) => {
   doc.end();
 });
 // PDF generation for seller invoices
-const PDFDocument = require('pdfkit');
 
 // GET: Download seller invoice PDF
 router.get('/seller/:email/pdf', (req, res) => {
+const router = express.Router();
   const { email } = req.params;
   const invoices = readInvoices().filter(inv => inv.sellerEmail === email);
   if (!invoices.length) return res.status(404).json({ error: 'No invoices for this seller.' });
@@ -211,12 +209,8 @@ router.get('/seller/:email/pdf', (req, res) => {
   });
   doc.end();
 });
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
 
-const router = express.Router();
+
 const invoicesPath = path.join(__dirname, '../../data/invoices.json');
 
 // Load invoices

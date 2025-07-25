@@ -1,10 +1,11 @@
+
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
-
 const router = express.Router();
 const offersPath = path.join(__dirname, '../../data/item_offers.json');
+
 
 // Load & Save
 function readOffers() {
@@ -15,6 +16,7 @@ function readOffers() {
 function writeOffers(data) {
   fs.writeFileSync(offersPath, JSON.stringify(data, null, 2), 'utf-8');
 }
+
 
 // ✅ POST: User submits item offer
 router.post('/', (req, res) => {
