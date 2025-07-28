@@ -15,6 +15,7 @@ type Lot = {
   endTime?: string;
   sellerEmail?: string;
   lotNumber?: number;
+  condition?: string;
 };
 
 type User = {
@@ -39,10 +40,12 @@ export default function AdminLotsPage() {
     title: '',
     description: '',
     startPrice: '',
+    bidIncrement: '',
     endTime: '',
     image: null as File | null,
     sellerEmail: '',
     sellerSearch: '',
+    condition: 'Good',
   });
 
   useEffect(() => {
@@ -64,15 +67,22 @@ export default function AdminLotsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedAuctionId || !form.title || !form.startPrice || !form.sellerEmail) return;
+    if (!selectedAuctionId || !form.title || !form.startPrice) return;
 
     const formData = new FormData();
     formData.append('title', form.title);
     formData.append('description', form.description);
     formData.append('startPrice', form.startPrice);
     if (form.endTime) formData.append('endTime', form.endTime);
+    if (form.bidIncrement) formData.append('bidIncrement', form.bidIncrement);
     if (form.image) formData.append('image', form.image);
-    formData.append('sellerEmail', form.sellerEmail);
+
+    if (form.sellerEmail) {
+      formData.append('sellerEmail', form.sellerEmail);
+    }
+    if (form.condition) {
+      formData.append('condition', form.condition);
+    }
 
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/lots/${selectedAuctionId}`, {
       method: 'POST',
@@ -83,16 +93,36 @@ export default function AdminLotsPage() {
       title: '',
       description: '',
       startPrice: '',
+      bidIncrement: '',
       endTime: '',
       image: null,
       sellerEmail: '',
-      sellerSearch: ''
+      sellerSearch: '',
+      condition: 'Good',
     });
+            <div>
+              <label className="block text-sm font-medium">Condition</label>
+              <select
+                required
+                value={form.condition}
+                onChange={e => {
+                  setForm({ ...form, condition: e.target.value });
+                  e.target.blur(); // auto-close dropdown
+                }}
+                className="w-full border px-4 py-2 rounded"
+              >
+                <option value="New">New</option>
+                <option value="Like New">Like New</option>
+                <option value="Good">Good</option>
+                <option value="Fair">Fair</option>
+              </select>
+            </div>
     fetchAuctions();
   };
 
-  const handleDelete = async (auctionId: string, lotId: string) => {
-    if (!confirm('Delete this lot?')) return;
+  const handleDelete = async (auctionId: string, lotId: string, lotNumber?: number, auctionTitle?: string) => {
+    const message = `Are you sure you want to delete Lot${lotNumber ? ' ' + lotNumber : ''} from Auction${auctionTitle ? ' \'' + auctionTitle + '\'' : ''}?`;
+    if (!confirm(message)) return;
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/lots/${auctionId}/${lotId}`, { method: 'DELETE' });
     fetchAuctions();
   };
@@ -117,10 +147,13 @@ export default function AdminLotsPage() {
               <select
                 required
                 value={form.sellerEmail}
-                onChange={e => setForm({ ...form, sellerEmail: e.target.value })}
+                onChange={e => {
+                  setForm({ ...form, sellerEmail: e.target.value });
+                  e.target.blur();
+                }}
                 className="w-full border px-4 py-2 rounded"
               >
-                <option key="choose-seller" value="">-- Choose Seller --</option>
+                <option key="no-seller" value="">No seller (admin-owned)</option>
                 {users
                   .filter(u =>
                     u.name.toLowerCase().includes(form.sellerSearch.toLowerCase()) ||
@@ -138,7 +171,10 @@ export default function AdminLotsPage() {
               <select
                 required
                 value={selectedAuctionId}
-                onChange={e => setSelectedAuctionId(e.target.value)}
+                onChange={e => {
+                  setSelectedAuctionId(e.target.value);
+                  e.target.blur();
+                }}
                 className="w-full border px-4 py-2 rounded"
               >
                 <option key="choose-auction" value="">-- Choose --</option>
@@ -165,7 +201,7 @@ export default function AdminLotsPage() {
                 className="w-full border px-4 py-2 rounded"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium">Start Price (R)</label>
                 <input
@@ -174,6 +210,18 @@ export default function AdminLotsPage() {
                   value={form.startPrice}
                   onChange={e => setForm({ ...form, startPrice: e.target.value })}
                   className="w-full border px-4 py-2 rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Bid Increment (R)</label>
+                <input
+                  type="number"
+                  required
+                  min={1}
+                  value={form.bidIncrement}
+                  onChange={e => setForm({ ...form, bidIncrement: e.target.value })}
+                  className="w-full border px-4 py-2 rounded"
+                  placeholder="e.g. 10, 50"
                 />
               </div>
               <div>
@@ -213,6 +261,7 @@ export default function AdminLotsPage() {
                       <div className="flex justify-between items-center">
                         <div>
                           <p className="font-semibold">{lot.title}</p>
+                          <p className="text-xs text-gray-500">Condition: {lot.condition || 'Good'}</p>
                           <p className="text-sm text-gray-600">R{lot.startPrice}</p>
                           {lot.image && (
                             <img src={lot.image} alt={lot.title} className="w-24 h-16 object-cover mt-1 rounded" />
@@ -222,7 +271,7 @@ export default function AdminLotsPage() {
                           )}
                         </div>
                         <button
-                          onClick={() => handleDelete(auction.id, lot.id)}
+                          onClick={() => handleDelete(auction.id, lot.id, lot.lotNumber, auction.title)}
                           className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                         >
                           Delete

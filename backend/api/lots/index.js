@@ -3,6 +3,11 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+// WebSocket notifications
+let wsNotify = null;
+try {
+  wsNotify = require('../../ws-server').sendNotification;
+} catch {}
 const { v4: uuidv4 } = require('uuid');
 const authenticateToken = require('../../middleware/auth');
 const { sendMail } = require('../../utils/mailer');
@@ -34,13 +39,19 @@ router.post('/:auctionId/end', verifyAdmin, async (req, res) => {
   async function endLotWithSniperProtection(lot, auctionId) {
     // Check if lot already ended
     if (lot.status === 'ended') return;
-    // Check for sniper protection: if last bid within 2min of end, extend by 2min
+    // Check for sniper protection: if last bid within 4min of end, extend by 4min
     let endTime = new Date(lot.endTime).getTime();
     let lastBidTime = lot.bidHistory && lot.bidHistory.length > 0 ? new Date(lot.bidHistory[lot.bidHistory.length - 1].time).getTime() : null;
-    if (lastBidTime && lastBidTime >= endTime - 2 * 60 * 1000) {
-      // Extend end time by 2min
-      endTime = lastBidTime + 2 * 60 * 1000;
+    if (lastBidTime && lastBidTime >= endTime - 4 * 60 * 1000) {
+      // Extend end time by 4min
+      endTime = lastBidTime + 4 * 60 * 1000;
       lot.endTime = new Date(endTime).toISOString();
+  // Notify all buyers: Auction is live now!
+  if (wsNotify) wsNotify(null, { message: `Auction "${auction.title}" is live now!` });
+  // Schedule 15 min warning
+  setTimeout(() => {
+    if (wsNotify) wsNotify(null, { message: `Auction "${auction.title}" ends in 15 mins!` });
+  }, Math.max(0, (new Date(auction.endTime).getTime() - 15 * 60 * 1000) - Date.now()));
       writeAuctions(auctions);
       // Wait until new end time
       const waitMs = Math.max(0, endTime - Date.now());
@@ -84,9 +95,17 @@ router.post('/:auctionId/end', verifyAdmin, async (req, res) => {
       await new Promise(r => setTimeout(r, waitMs));
       await endLotWithSniperProtection(lot, auctionId);
     }
+    // After all lots ended, auto-generate and email invoices
+    try {
+      const fetch = require('node-fetch');
+      const apiUrl = process.env.API_INTERNAL_URL || `http://localhost:3001/api/invoices/email-invoices/${auctionId}`;
+      await fetch(apiUrl, { method: 'POST' });
+    } catch (e) {
+      console.error('Failed to auto-email invoices:', e);
+    }
   })();
 
-  res.json({ message: 'Auction lots scheduled to end with stagger and sniper protection.', lotEndTimes });
+  res.json({ message: 'Auction lots scheduled to end with stagger and sniper protection. Invoices will be emailed automatically after auction ends.', lotEndTimes });
 });
 const auctionsPath = path.join(__dirname, '../../data/auctions.json');
 
@@ -123,7 +142,7 @@ router.get('/:auctionId', (req, res) => {
 // ✅ POST: Add a new lot to an auction
 router.post('/:auctionId', upload.single('image'), (req, res) => {
   const { auctionId } = req.params;
-  const { title, description, startPrice, bidIncrement, endTime, sellerEmail } = req.body;
+  const { title, description, startPrice, bidIncrement, endTime, sellerEmail, condition } = req.body;
   const image = req.file ? `/uploads/lots/${req.file.filename}` : '';
 
   const auctions = readAuctions();
@@ -150,7 +169,8 @@ router.post('/:auctionId', upload.single('image'), (req, res) => {
     endTime: endTime || null,
     createdAt: new Date().toISOString(),
     sellerEmail: sellerEmail || null,
-    lotNumber: maxLotNumber + 1
+    lotNumber: maxLotNumber + 1,
+    condition: condition || 'Good'
   };
   auction.lots.push(newLot);
   writeAuctions(auctions);
@@ -169,7 +189,8 @@ router.put('/:auctionId/:lotId', (req, res) => {
 
   auction.lots[lotIndex] = {
     ...auction.lots[lotIndex],
-    ...req.body
+    ...req.body,
+    condition: req.body.condition || auction.lots[lotIndex].condition || 'Good'
   };
 
   writeAuctions(auctions);
@@ -256,6 +277,7 @@ router.put('/:auctionId/:lotId/bid', authenticateToken, async (req, res) => {
     const eligible = lot.autoBids.filter(b => b.maxBid >= lot.currentBid + increment && b.bidderEmail !== lastBidder);
     if (eligible.length > 0) {
       // Highest maxBid wins
+      if (wsNotify) wsNotify(previousBidder, { message: `You've been outbid on lot ${lot.title}!` });
       eligible.sort((a, b) => b.maxBid - a.maxBid);
       const winner = eligible[0];
       newBid = lot.currentBid + increment;
@@ -286,4 +308,5 @@ router.put('/:auctionId/:lotId/bid', authenticateToken, async (req, res) => {
 });
 
 module.exports = router;
+          if (wsNotify) wsNotify(lastBidder, { message: `You've been outbid on lot ${lot.title}!` });
 

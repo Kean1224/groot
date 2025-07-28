@@ -32,6 +32,8 @@ export default function AuctionDetailPage() {
   const auctionId = params?.auctionId;
   // --- State ---
   const [auction, setAuction] = useState<any>(null);
+  const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
+  const [registerLoading, setRegisterLoading] = useState(false);
   const [auctionTitle, setAuctionTitle] = useState('Auction Title');
   const [auctionEnd, setAuctionEnd] = useState(Date.now() + 1000 * 60 * 60);
   const [now] = useState(Date.now());
@@ -41,6 +43,10 @@ export default function AuctionDetailPage() {
   // Admin FICA review state
   const [ficaList, setFicaList] = useState<any[]>([]);
   const [ficaListLoading, setFicaListLoading] = useState(false);
+  // Admin pending user registration state
+  const [pendingUsers, setPendingUsers] = useState<any[]>([]);
+  const [pendingUsersLoading, setPendingUsersLoading] = useState(false);
+
   // Fetch all FICA uploads for admin
   const fetchFicaList = () => {
     setFicaListLoading(true);
@@ -49,12 +55,22 @@ export default function AuctionDetailPage() {
       .then(data => setFicaList(data || []))
       .finally(() => setFicaListLoading(false));
   };
+  // Fetch all pending user registrations for admin
+  const fetchPendingUsers = () => {
+    setPendingUsersLoading(true);
+    fetch('/api/pending-users')
+      .then(res => res.json())
+      .then(data => setPendingUsers(data || []))
+      .finally(() => setPendingUsersLoading(false));
+  };
+
   useEffect(() => {
     if (!isAdmin) return;
     fetchFicaList();
+    fetchPendingUsers();
   }, [isAdmin]);
 
-  // Admin approve/reject handlers
+  // Admin approve/reject handlers for FICA
   const handleApproveFica = async (email: string) => {
     await fetch(`/api/fica/${email}/approve`, { method: 'POST' });
     setFicaList(list => list.map(f => f.email === email ? { ...f, status: 'approved' } : f));
@@ -62,6 +78,15 @@ export default function AuctionDetailPage() {
   const handleRejectFica = async (email: string) => {
     await fetch(`/api/fica/${email}/reject`, { method: 'POST' });
     setFicaList(list => list.map(f => f.email === email ? { ...f, status: 'rejected' } : f));
+  };
+  // Admin approve/reject handlers for pending users
+  const handleApproveUser = async (email: string) => {
+    await fetch(`/api/pending-users/${email}/approve`, { method: 'POST' });
+    setPendingUsers(list => list.filter(u => u.email !== email));
+  };
+  const handleRejectUser = async (email: string) => {
+    await fetch(`/api/pending-users/${email}/reject`, { method: 'POST' });
+    setPendingUsers(list => list.filter(u => u.email !== email));
   };
   const [lots, setLots] = useState<Lot[]>([]);
   const [userEmail] = useState('user@example.com');
@@ -111,6 +136,35 @@ export default function AuctionDetailPage() {
         }
       });
   }, [auctionId]);
+
+  // Check registration status
+  useEffect(() => {
+    if (!auctionId || !userEmail) return;
+    fetch(`/api/auctions/${auctionId}/is-registered?email=${encodeURIComponent(userEmail)}`)
+      .then(res => res.json())
+      .then(data => setIsRegistered(!!data.registered))
+      .catch(() => setIsRegistered(false));
+  }, [auctionId, userEmail]);
+
+  const handleRegister = async () => {
+    setRegisterLoading(true);
+    try {
+      const res = await fetch(`/api/auctions/${auctionId}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail })
+      });
+      if (res.ok) {
+        setIsRegistered(true);
+        alert('You have successfully registered!');
+      } else {
+        alert('Registration failed.');
+      }
+    } catch {
+      alert('Registration failed.');
+    }
+    setRegisterLoading(false);
+  };
 
   // Fetch deposit status
   useEffect(() => {
@@ -188,6 +242,19 @@ export default function AuctionDetailPage() {
             {auctionTitle}
           </h1>
           <div className="w-full flex flex-col sm:flex-row justify-center items-center gap-4 mt-2">
+            {/* Registration logic */}
+            {isRegistered === false && (
+              <button
+                className="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 rounded-xl shadow-lg transition-all duration-150 focus:ring-2 focus:ring-green-300 focus:outline-none mb-2"
+                onClick={handleRegister}
+                disabled={registerLoading}
+              >
+                {registerLoading ? 'Registering...' : 'Register Here'}
+              </button>
+            )}
+            {isRegistered === true && (
+              <span className="bg-green-100 text-green-700 px-6 py-2 rounded-xl shadow font-bold border border-green-200 mb-2">You have successfully registered!</span>
+            )}
             <div className="bg-blue-100 text-blue-800 font-mono px-6 py-2 rounded-xl shadow border border-blue-200 text-lg">
               Auction ends in: {formatTimeLeft(auctionEnd - now)}
             </div>
@@ -282,59 +349,110 @@ export default function AuctionDetailPage() {
         {/* Divider */}
         <div className="w-full border-t border-dashed border-yellow-200 my-8"></div>
 
-        {/* Admin FICA approval UI */}
+        {/* Admin FICA and Pending User Approvals UI */}
         {isAdmin && (
-          <div className="w-full px-6 py-6 bg-white/80 rounded-xl mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-yellow-700">FICA Approvals</h2>
-              <button
-                className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
-                onClick={fetchFicaList}
-                disabled={ficaListLoading}
-              >
-                {ficaListLoading ? 'Refreshing...' : 'Refresh'}
-              </button>
-            </div>
-            {ficaListLoading ? (
-              <div className="text-gray-500">Loading...</div>
-            ) : ficaList.length === 0 ? (
-              <div className="text-gray-400 italic">No FICA uploads found.</div>
-            ) : (
-              <table className="w-full text-sm border">
-                <thead>
-                  <tr className="bg-yellow-100">
-                    <th className="p-2 border">User Email</th>
-                    <th className="p-2 border">Status</th>
-                    <th className="p-2 border">Document</th>
-                    <th className="p-2 border">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ficaList.map(fica => (
-                    <tr key={fica.email} className="border-b">
-                      <td className="p-2 border">{fica.email}</td>
-                      <td className="p-2 border">{fica.status}</td>
-                      <td className="p-2 border">
-                        <a href={fica.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View</a>
-                      </td>
-                      <td className="p-2 border flex gap-2">
-                        <button
-                          className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
-                          onClick={() => handleApproveFica(fica.email)}
-                          disabled={fica.status === 'approved'}
-                        >Approve</button>
-                        <button
-                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                          onClick={() => handleRejectFica(fica.email)}
-                          disabled={fica.status === 'rejected'}
-                        >Reject</button>
-                      </td>
+          <>
+            {/* FICA Approvals */}
+            <div className="w-full px-6 py-6 bg-white/80 rounded-xl mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-yellow-700">FICA Approvals</h2>
+                <button
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                  onClick={fetchFicaList}
+                  disabled={ficaListLoading}
+                >
+                  {ficaListLoading ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
+              {ficaListLoading ? (
+                <div className="text-gray-500">Loading...</div>
+              ) : ficaList.length === 0 ? (
+                <div className="text-gray-400 italic">No FICA uploads found.</div>
+              ) : (
+                <table className="w-full text-sm border mb-8">
+                  <thead>
+                    <tr className="bg-yellow-100">
+                      <th className="p-2 border">User Email</th>
+                      <th className="p-2 border">Status</th>
+                      <th className="p-2 border">Document</th>
+                      <th className="p-2 border">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+                  </thead>
+                  <tbody>
+                    {ficaList.map(fica => (
+                      <tr key={fica.email} className="border-b">
+                        <td className="p-2 border">{fica.email}</td>
+                        <td className="p-2 border">{fica.status}</td>
+                        <td className="p-2 border">
+                          <a href={fica.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View</a>
+                        </td>
+                        <td className="p-2 border flex gap-2">
+                          <button
+                            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
+                            onClick={() => handleApproveFica(fica.email)}
+                            disabled={fica.status === 'approved'}
+                          >Approve</button>
+                          <button
+                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                            onClick={() => handleRejectFica(fica.email)}
+                            disabled={fica.status === 'rejected'}
+                          >Reject</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            {/* Pending User Approvals */}
+            <div className="w-full px-6 py-6 bg-white/80 rounded-xl mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-blue-700">User Registration Approvals</h2>
+                <button
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                  onClick={fetchPendingUsers}
+                  disabled={pendingUsersLoading}
+                >
+                  {pendingUsersLoading ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
+              {pendingUsersLoading ? (
+                <div className="text-gray-500">Loading...</div>
+              ) : pendingUsers.length === 0 ? (
+                <div className="text-gray-400 italic">No pending user registrations.</div>
+              ) : (
+                <table className="w-full text-sm border">
+                  <thead>
+                    <tr className="bg-blue-100">
+                      <th className="p-2 border">User Email</th>
+                      <th className="p-2 border">Name</th>
+                      <th className="p-2 border">Registered At</th>
+                      <th className="p-2 border">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingUsers.map(user => (
+                      <tr key={user.email} className="border-b">
+                        <td className="p-2 border">{user.email}</td>
+                        <td className="p-2 border">{user.name || '-'}</td>
+                        <td className="p-2 border">{user.registeredAt ? new Date(user.registeredAt).toLocaleString() : '-'}</td>
+                        <td className="p-2 border flex gap-2">
+                          <button
+                            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
+                            onClick={() => handleApproveUser(user.email)}
+                          >Approve</button>
+                          <button
+                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                            onClick={() => handleRejectUser(user.email)}
+                          >Reject</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </>
         )}
 
         {/* Lots per page selector */}

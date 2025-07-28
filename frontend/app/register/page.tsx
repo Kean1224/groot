@@ -9,6 +9,8 @@ export default function RegisterPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [proofOfAddress, setProofOfAddress] = useState<File | null>(null);
   const [idCopy, setIdCopy] = useState<File | null>(null);
   const [status, setStatus] = useState('');
@@ -16,8 +18,13 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('');
-    if (!name || !username || !email || !password) {
+    if (!name || !username || !email || !password || !confirmPassword) {
       setStatus('❌ Please fill in all fields.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setPasswordError('Passwords do not match');
+      setStatus('❌ Passwords do not match.');
       return;
     }
     // Username validation: only a-zA-Z0-9
@@ -53,6 +60,17 @@ export default function RegisterPage() {
       setStatus('❌ Server error. Please try again.');
     }
   };
+
+  // Real-time password match validation
+  React.useEffect(() => {
+    if (!confirmPassword) {
+      setPasswordError('');
+    } else if (password !== confirmPassword) {
+      setPasswordError('Passwords do not match');
+    } else {
+      setPasswordError('');
+    }
+  }, [password, confirmPassword]);
 
   return (
     <main className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow">
@@ -116,6 +134,7 @@ export default function RegisterPage() {
           />
         </div>
 
+
         <div>
           <label className="block text-sm font-medium">Password</label>
           <input
@@ -124,12 +143,29 @@ export default function RegisterPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             className="w-full px-4 py-2 border rounded shadow-sm"
+            autoComplete="new-password"
           />
         </div>
+        <div>
+          <label className="block text-sm font-medium">Confirm Password</label>
+          <input
+            type="password"
+            required
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
+            className="w-full px-4 py-2 border rounded shadow-sm"
+            autoComplete="new-password"
+          />
+          {passwordError && (
+            <p className="text-red-600 text-xs mt-1">{passwordError}</p>
+          )}
+        </div>
+
 
         <button
           type="submit"
           className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded"
+          disabled={!!passwordError || !password || !confirmPassword}
         >
           Register
         </button>

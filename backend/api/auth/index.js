@@ -6,6 +6,50 @@ const fs = require('fs');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const {
+  getUserByEmail,
+  setUserPassword,
+  saveResetToken,
+  getEmailByToken,
+  deleteToken,
+  generateToken
+} = require('./reset-utils');
+let sendMail = null;
+try {
+  sendMail = require('../../utils/mailer').sendMail;
+} catch {}
+// POST /api/auth/forgot-password
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+  const user = getUserByEmail(email);
+  if (!user) return res.json({ success: true }); // Don't reveal if email exists
+  const token = generateToken();
+  const expiresAt = Date.now() + 1000 * 60 * 60; // 1 hour
+  saveResetToken(email, token, expiresAt);
+  if (sendMail) {
+    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+    await sendMail({
+      to: email,
+      subject: 'Password Reset Request',
+      text: `Reset your password: ${resetUrl}`,
+      html: `<p>Click <a href="${resetUrl}">here</a> to reset your password. This link is valid for 1 hour.</p>`
+    });
+  }
+  res.json({ success: true });
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ error: 'Token and password required' });
+  const email = getEmailByToken(token);
+  if (!email) return res.status(400).json({ error: 'Invalid or expired token' });
+  const hashed = await bcrypt.hash(password, 10);
+  setUserPassword(email, hashed);
+  deleteToken(token);
+  res.json({ success: true });
+});
 const multer = require('multer');
 
 // Multer setup for FICA uploads
@@ -111,6 +155,25 @@ router.post('/login', async (req, res) => {
     status: 'success',
     token
   });
+});
+
+
+// GET /api/auth/session - check login and admin status
+router.get('/session', (req, res) => {
+  let token = null;
+  // Try to get token from Authorization header (Bearer) or cookie
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    token = req.headers.authorization.replace('Bearer ', '');
+  } else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  }
+  if (!token) return res.json({ isLoggedIn: false });
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    res.json({ isLoggedIn: true, email: payload.email, role: payload.role, isAdmin: payload.role === 'admin' });
+  } catch {
+    res.json({ isLoggedIn: false });
+  }
 });
 
 module.exports = router;

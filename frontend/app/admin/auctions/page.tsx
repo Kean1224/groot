@@ -177,6 +177,34 @@ export default function AdminAuctionsPage() {
                         >
                           End Auction
                         </button>
+                        <button
+                          onClick={async () => {
+                            // Prompt for new start/end date
+                            const startTime = prompt('Enter new start date/time (YYYY-MM-DDTHH:mm):');
+                            if (!startTime) return;
+                            const endTime = prompt('Enter new end date/time (YYYY-MM-DDTHH:mm):');
+                            if (!endTime) return;
+                            try {
+                              const res = await fetch(`/api/auctions/${auction.id}/rerun`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ startTime, endTime })
+                              });
+                              if (res.ok) {
+                                alert('Auction rerun created!');
+                                fetchAuctions();
+                              } else {
+                                const data = await res.json();
+                                alert('Failed to rerun auction: ' + (data.error || 'Unknown error'));
+                              }
+                            } catch (e) {
+                              alert('Failed to rerun auction.');
+                            }
+                          }}
+                          className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                        >
+                          Rerun
+                        </button>
                       </div>
                     </div>
                   </li>

@@ -182,16 +182,24 @@ export default function AdminUsersPage() {
                     )}
                   </td>
                   <td className="p-2">
-                    <button
-                      onClick={() => toggleSuspend(user.email, user.suspended)}
-                      className={`px-2 py-1 text-xs rounded ${
-                        user.suspended
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-red-500 text-white'
-                      }`}
-                    >
-                      {user.suspended ? 'Unsuspend' : 'Suspend'}
-                    </button>
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={!!user.suspended}
+                        onChange={async (e) => {
+                          await toggleSuspend(user.email, user.suspended);
+                          // Optimistically update UI
+                          setUsers((prev) => prev.map(u =>
+                            u.email === user.email ? { ...u, suspended: !user.suspended } : u
+                          ));
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-yellow-400 rounded-full peer peer-checked:bg-blue-500 transition-all"></div>
+                      <span className="ml-2 text-xs font-medium text-gray-700">
+                        {user.suspended ? 'Suspended' : 'Active'}
+                      </span>
+                    </label>
                   </td>
                 </tr>
               ))}

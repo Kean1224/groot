@@ -1,0 +1,21 @@
+{
+  "name": "All4You Auctioneers",
+  "short_name": "All4You",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#facc15",
+  "theme_color": "#facc15",
+  "description": "Bid, buy, and sell with All4You Auctioneers.",
+  "icons": [
+    {
+      "src": "/img/ChatGPT%20Image%20Jul%2028,%202025,%2011_14_52%20PM.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/img/ChatGPT%20Image%20Jul%2028,%202025,%2011_14_52%20PM.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

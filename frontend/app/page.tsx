@@ -6,9 +6,16 @@ export default function HomePage() {
   return (
     <main className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-yellow-100 via-white to-blue-100 px-2 py-10">
       <div className="w-full max-w-2xl bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl border border-yellow-200 p-8 sm:p-14 flex flex-col items-center text-center relative">
-        {/* Hero Image */}
-        <div className="w-32 h-32 mb-6 rounded-full bg-gradient-to-tr from-yellow-300 via-yellow-100 to-blue-200 flex items-center justify-center shadow-lg border-4 border-white mx-auto">
-          <span className="text-6xl">🔨</span>
+        {/* Logo Image */}
+        <div className="mb-6 flex flex-col items-center">
+          <div className="w-36 h-36 rounded-full bg-white shadow-xl border-4 border-yellow-300 flex items-center justify-center overflow-hidden">
+            <img
+              src="/img/ChatGPT%20Image%20Jul%2028,%202025,%2011_14_52%20PM.png"
+              alt="All4You Auctioneers Logo"
+              className="object-contain w-32 h-32"
+              style={{ maxWidth: 128, maxHeight: 128 }}
+            />
+          </div>
         </div>
         <h1 className="text-4xl sm:text-5xl font-extrabold mb-6 text-yellow-600 drop-shadow-lg tracking-tight">
           Welcome to <span className="text-blue-700">All4You Auctioneers</span>
