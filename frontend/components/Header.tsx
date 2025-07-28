@@ -56,18 +56,22 @@ export default function Header() {
 
       {/* MOBILE NAV */}
       {menuOpen && (
-        <div className="md:hidden px-4 pb-4 space-y-2 bg-yellow-500 text-white text-sm font-semibold transition-all">
-          <Link href="/auctions" className={isActive('/auctions')}>Auctions</Link>
-          <Link href="/terms" className={isActive('/terms')}>Terms</Link>
-          <div>
-            <p className="py-2">My Account</p>
-            <Link href="/account/buyer" className="block pl-4 hover:text-black">Buyer Invoices</Link>
-            <Link href="/account/seller" className="block pl-4 hover:text-black">Seller Invoices</Link>
+        <div className="md:hidden px-4 pb-6 bg-yellow-500 text-white text-base font-semibold transition-all rounded-b-2xl shadow-xl">
+          <div className="flex flex-col gap-2 divide-y divide-yellow-200">
+            <Link href="/auctions" className={isActive('/auctions') + ' py-3 px-2 rounded-lg hover:bg-yellow-600 transition'}>Auctions</Link>
+            <Link href="/terms" className={isActive('/terms') + ' py-3 px-2 rounded-lg hover:bg-yellow-600 transition'}>Terms</Link>
+            <div className="pt-3 pb-1">
+              <p className="font-bold text-white mb-1 pl-1">My Account</p>
+              <div className="flex flex-col gap-1 pl-3">
+                <Link href="/account/buyer" className="py-2 px-2 rounded hover:bg-yellow-600 transition">Buyer Invoices</Link>
+                <Link href="/account/seller" className="py-2 px-2 rounded hover:bg-yellow-600 transition">Seller Invoices</Link>
+              </div>
+            </div>
+            <Link href="/contact" className={isActive('/contact') + ' py-3 px-2 rounded-lg hover:bg-yellow-600 transition'}>Contact</Link>
+            <Link href="/login" className={isActive('/login') + ' py-3 px-2 rounded-lg hover:bg-yellow-600 transition'}>Login</Link>
+            <Link href="/register" className={isActive('/register') + ' py-3 px-2 rounded-lg hover:bg-yellow-600 transition'}>Register</Link>
+            <Link href="/sell" className={isActive('/sell') + ' py-3 px-2 rounded-lg hover:bg-yellow-600 transition'}>Sell</Link>
           </div>
-          <Link href="/contact" className={isActive('/contact')}>Contact</Link>
-          <Link href="/login" className={isActive('/login')}>Login</Link>
-          <Link href="/register" className={isActive('/register')}>Register</Link>
-          <Link href="/sell" className={isActive('/sell')}>Sell</Link>
         </div>
       )}
     </header>

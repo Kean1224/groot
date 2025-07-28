@@ -24,9 +24,12 @@ type Lot = {
 };
 
 // --- Main Component ---
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 
 export default function AuctionDetailPage() {
+  const params = useParams();
+  const auctionId = params?.auctionId;
   // --- State placeholders ---
   const [auctionTitle] = useState('Auction Title');
   const [auctionEnd] = useState(Date.now() + 1000 * 60 * 60); // 1 hour from now
@@ -34,7 +37,7 @@ export default function AuctionDetailPage() {
   const [depositStatus] = useState('not_paid');
   const [depositLoading] = useState(false);
   const [isAdmin] = useState(false);
-  const [lots] = useState<Lot[]>([]); // Fill with real data
+  const [lots, setLots] = useState<Lot[]>([]); // Will be updated by polling
   const [userEmail] = useState('user@example.com');
   const [buyerEmails] = useState<string[]>([]);
   const [sellerEmails] = useState<string[]>([]);
@@ -44,6 +47,25 @@ export default function AuctionDetailPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = 1;
   const currentLots = lots;
+
+  // --- Poll lots every 3 seconds ---
+  useEffect(() => {
+    if (!auctionId) return;
+    const fetchLots = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auctions/${auctionId}/lots`);
+        if (res.ok) {
+          const data = await res.json();
+          setLots(data.lots || []);
+        }
+      } catch (err) {
+        // Optionally handle error
+      }
+    };
+    fetchLots();
+    const interval = setInterval(fetchLots, 3000);
+    return () => clearInterval(interval);
+  }, [auctionId]);
 
   // --- Handlers (placeholders) ---
   const handleDepositRequest = () => {};

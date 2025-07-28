@@ -1,3 +1,4 @@
+const verifyAdmin = require('../auth/verify-admin');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -23,8 +24,8 @@ router.get('/', (req, res) => {
   res.json(auctions);
 });
 
-// POST new auction
-router.post('/', (req, res) => {
+// POST new auction (admin only)
+router.post('/', verifyAdmin, (req, res) => {
   const { title, description, location, startTime, endTime, increment } = req.body;
 
   if (!title || !startTime || !endTime || !increment) {
@@ -51,8 +52,8 @@ router.post('/', (req, res) => {
   res.status(201).json(newAuction);
 });
 
-// PUT update an auction
-router.put('/:id', (req, res) => {
+// PUT update an auction (admin only)
+router.put('/:id', verifyAdmin, (req, res) => {
   const { id } = req.params;
   const auctions = readAuctions();
   const index = auctions.findIndex(a => a.id === id);
@@ -65,8 +66,8 @@ router.put('/:id', (req, res) => {
   res.json(auctions[index]);
 });
 
-// DELETE auction
-router.delete('/:id', (req, res) => {
+// DELETE auction (admin only)
+router.delete('/:id', verifyAdmin, (req, res) => {
   const { id } = req.params;
   let auctions = readAuctions();
   const auction = auctions.find(a => a.id === id);

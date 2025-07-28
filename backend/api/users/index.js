@@ -199,8 +199,10 @@ router.put('/fica/:email', async (req, res) => {
   res.json({ message: 'FICA approved', user });
 });
 
-// ✅ PUT: Suspend user
-router.put('/suspend/:email', (req, res) => {
+const verifyAdmin = require('../auth/verify-admin');
+
+// ✅ PUT: Suspend user (admin only)
+router.put('/suspend/:email', verifyAdmin, (req, res) => {
   const users = readUsers();
   const user = users.find(u => u.email === req.params.email);
   if (!user) return res.status(404).json({ error: 'User not found' });
@@ -215,8 +217,8 @@ router.put('/suspend/:email', (req, res) => {
   }
 });
 
-// ✅ PUT: Update user
-router.put('/:email', (req, res) => {
+// ✅ PUT: Update user (admin only)
+router.put('/:email', verifyAdmin, (req, res) => {
   const users = readUsers();
   const user = users.find(u => u.email === req.params.email);
   if (!user) return res.status(404).json({ error: 'User not found' });
@@ -226,7 +228,7 @@ router.put('/:email', (req, res) => {
   res.json({ message: 'User updated', user });
 });
 
-// ✅ PUT: Toggle item in user's watchlist
+// ✅ PUT: Toggle item in user's watchlist (user only, not admin)
 router.put('/:email/watchlist', (req, res) => {
   const { lotId } = req.body;
   if (!lotId) return res.status(400).json({ error: 'Missing lotId' });

@@ -1,3 +1,4 @@
+const verifyAdmin = require('../auth/verify-admin');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -7,8 +8,8 @@ const authenticateToken = require('../../middleware/auth');
 const { sendMail } = require('../../utils/mailer');
 const router = express.Router();
 
-// ✅ POST: End auction with per-lot stagger and sniper protection
-router.post('/:auctionId/end', async (req, res) => {
+// ✅ POST: End auction with per-lot stagger and sniper protection (admin only)
+router.post('/:auctionId/end', verifyAdmin, async (req, res) => {
   const { auctionId } = req.params;
   const auctions = readAuctions();
   const auction = auctions.find(a => a.id === auctionId);

@@ -8,8 +8,18 @@ export default function AdminDashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const isAdmin = localStorage.getItem('isAdmin');
-    if (isAdmin !== 'true') {
+    const token = localStorage.getItem('admin_jwt');
+    if (!token) {
+      router.push('/admin/login');
+      return;
+    }
+    // Optionally: verify token client-side (not secure, but better UX)
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.role !== 'admin' || !payload.email || !payload.exp || Date.now() / 1000 > payload.exp) {
+        router.push('/admin/login');
+      }
+    } catch {
       router.push('/admin/login');
     }
   }, [router]);
