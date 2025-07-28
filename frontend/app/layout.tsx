@@ -1,4 +1,5 @@
 
+"use client";
 import "../styles/globals.css";
 import Layout from "../components/Layout";
 import type { Metadata } from "next";

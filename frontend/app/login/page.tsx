@@ -1,14 +1,6 @@
-'use client';
 
-import React, { useState } from 'react';
-import { setToken } from '../../utils/auth';
-
-export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [status, setStatus] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
+"use client";
+import React from 'react';
 import LoginForm from '../../components/loginform';
 
 export default function LoginPage() {
@@ -18,4 +10,3 @@ export default function LoginPage() {
     </main>
   );
 }
-        headers: { 'Content-Type': 'application/json' },
