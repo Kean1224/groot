@@ -1,15 +1,4 @@
-'use client';
-import React, { useState } from 'react';
-import ContactForm from '../../components/contactform';
-export default function ContactPage() {
-  return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-200 via-white to-blue-200 py-10 px-2">
-      <ContactForm />
-    </main>
-  );
-}
-'use client';
-
+"use client";
 import React, { useState } from 'react';
 
 export default function ContactPage() {
