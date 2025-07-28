@@ -6,7 +6,15 @@ import AdminSidebar from '../../../components/AdminSidebar';
 
 export default function AdminAuctionsPage() {
   const [auctions, setAuctions] = useState<any[]>([]);
-  const [form, setForm] = useState({ title: '', location: '', startTime: '', endTime: '', increment: 1 });
+  const [form, setForm] = useState({
+    title: '',
+    location: '',
+    startTime: '',
+    endTime: '',
+    increment: 1,
+    depositRequired: false,
+    depositAmount: 0
+  });
 
   // Fetch auctions
   const fetchAuctions = async () => {
@@ -26,7 +34,7 @@ export default function AdminAuctionsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     });
-    setForm({ title: '', location: '', startTime: '', endTime: '', increment: 1 });
+    setForm({ title: '', location: '', startTime: '', endTime: '', increment: 1, depositRequired: false, depositAmount: 0 });
     fetchAuctions();
   };
 
@@ -96,7 +104,29 @@ export default function AdminAuctionsPage() {
                 className="w-full border px-4 py-2 rounded"
               />
             </div>
-            <button type="submit" className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={form.depositRequired}
+                  onChange={e => setForm({ ...form, depositRequired: e.target.checked })}
+                  className="form-checkbox"
+                />
+                Deposit Required
+              </label>
+              {form.depositRequired && (
+                <input
+                  type="number"
+                  min={0}
+                  value={form.depositAmount}
+                  onChange={e => setForm({ ...form, depositAmount: Number(e.target.value) })}
+                  placeholder="Deposit Amount (R)"
+                  className="border px-2 py-1 rounded w-40"
+                  required
+                />
+              )}
+            </div>
+            <button type="submit" className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 mt-2">
               ➕ Create Auction
             </button>
           </form>
@@ -117,6 +147,9 @@ export default function AdminAuctionsPage() {
                         <p className="text-sm text-gray-600">From: {new Date(auction.startTime).toLocaleString()}</p>
                         <p className="text-sm text-gray-600">To: {new Date(auction.endTime).toLocaleString()}</p>
                         <p className="text-sm text-gray-600">Increment: R{auction.increment}</p>
+                        {auction.depositRequired && (
+                          <p className="text-sm text-red-600 font-semibold">Deposit Required: R{auction.depositAmount}</p>
+                        )}
                       </div>
                       <div className="flex flex-col gap-2 sm:items-end">
                         <button

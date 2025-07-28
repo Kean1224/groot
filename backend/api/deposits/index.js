@@ -1,79 +1,57 @@
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const router = express.Router();
 
-const usersPath = path.join(__dirname, '../../data/users.json');
-const auctionsPath = path.join(__dirname, '../../data/auctions.json');
+const verifyAdmin = require('../auth/verify-admin');
+const dataPath = path.join(__dirname, '../../data/auctionDeposits.json');
 
-function readUsers() {
-  if (!fs.existsSync(usersPath)) return [];
-  return JSON.parse(fs.readFileSync(usersPath, 'utf-8'));
+function readDeposits() {
+  if (!fs.existsSync(dataPath)) return [];
+  return JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
 }
-function writeUsers(data) {
-  fs.writeFileSync(usersPath, JSON.stringify(data, null, 2), 'utf-8');
+function writeDeposits(deposits) {
+  fs.writeFileSync(dataPath, JSON.stringify(deposits, null, 2), 'utf-8');
 }
-function readAuctions() {
-  if (!fs.existsSync(auctionsPath)) return [];
-  return JSON.parse(fs.readFileSync(auctionsPath, 'utf-8'));
-}
-
-// POST: User requests/makes deposit for an auction
-router.post('/request', (req, res) => {
-  const { email, auctionId } = req.body;
-  if (!email || !auctionId) return res.status(400).json({ error: 'Missing email or auctionId' });
-  const users = readUsers();
-  const user = users.find(u => u.email === email);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-  const auctions = readAuctions();
-  const auction = auctions.find(a => a.id === auctionId);
-  if (!auction) return res.status(404).json({ error: 'Auction not found' });
-  if (!auction.depositRequired) return res.status(400).json({ error: 'Deposit not required for this auction' });
-  if (!user.deposits) user.deposits = [];
-  let deposit = user.deposits.find(d => d.auctionId === auctionId);
-  if (!deposit) {
-    deposit = { auctionId, status: 'paid', returned: false };
-    user.deposits.push(deposit);
-  } else {
-    deposit.status = 'paid';
-    deposit.returned = false;
-  }
-  writeUsers(users);
-  res.json({ message: 'Deposit marked as paid', deposit });
-});
 
 // GET: Get deposit status for a user/auction
-router.get('/status/:email/:auctionId', (req, res) => {
-  const { email, auctionId } = req.params;
-  const users = readUsers();
-  const user = users.find(u => u.email === email);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-  const deposit = user.deposits ? user.deposits.find(d => d.auctionId === auctionId) : null;
-  res.json({ deposit });
+router.get('/:auctionId/:email', (req, res) => {
+  const { auctionId, email } = req.params;
+  const deposits = readDeposits();
+  const entry = deposits.find(d => d.auctionId === auctionId && d.email === email);
+  res.json(entry || { auctionId, email, status: 'not_paid' });
 });
 
-// PUT: Admin marks deposit as returned or in progress
-router.put('/return', (req, res) => {
-  const { email, auctionId, status } = req.body;
-  if (!email || !auctionId || !status) return res.status(400).json({ error: 'Missing fields' });
-  const users = readUsers();
-  const user = users.find(u => u.email === email);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-  if (!user.deposits) user.deposits = [];
-  let deposit = user.deposits.find(d => d.auctionId === auctionId);
-  if (!deposit) {
-    deposit = { auctionId, status: 'paid', returned: false };
-    user.deposits.push(deposit);
+// POST: User marks deposit as paid (pending admin approval)
+router.post('/:auctionId/:email', (req, res) => {
+  const { auctionId, email } = req.params;
+  const deposits = readDeposits();
+  let entry = deposits.find(d => d.auctionId === auctionId && d.email === email);
+  if (!entry) {
+    entry = { auctionId, email, status: 'pending', notified: false };
+    deposits.push(entry);
+  } else {
+    entry.status = 'pending';
+    entry.notified = false;
   }
-  if (status === 'in_progress') {
-    deposit.status = 'return_in_progress';
-    deposit.returned = false;
-  } else if (status === 'returned') {
-    deposit.status = 'returned';
-    deposit.returned = true;
+  writeDeposits(deposits);
+  res.json(entry);
+});
+
+// PUT: Admin approves deposit
+router.put('/:auctionId/:email', verifyAdmin, (req, res) => {
+  const { auctionId, email } = req.params;
+  const deposits = readDeposits();
+  let entry = deposits.find(d => d.auctionId === auctionId && d.email === email);
+  if (!entry) {
+    return res.status(404).json({ error: 'No deposit record found' });
   }
-  writeUsers(users);
-  res.json({ message: 'Deposit status updated', deposit });
+  entry.status = req.body.status || 'approved';
+  writeDeposits(deposits);
+  res.json(entry);
+});
+
+// GET: List all deposits for an auction (admin)
+router.get('/auction/:auctionId', verifyAdmin, (req, res) => {
+  const { auctionId } = req.params;
+  const deposits = readDeposits().filter(d => d.auctionId === auctionId);
+  res.json(deposits);
 });
 
 module.exports = router;

@@ -26,7 +26,7 @@ router.get('/', (req, res) => {
 
 // POST new auction (admin only)
 router.post('/', verifyAdmin, (req, res) => {
-  const { title, description, location, startTime, endTime, increment } = req.body;
+  const { title, description, location, startTime, endTime, increment, depositRequired, depositAmount } = req.body;
 
   if (!title || !startTime || !endTime || !increment) {
     return res.status(400).json({ error: 'Missing required fields.' });
@@ -42,6 +42,8 @@ router.post('/', verifyAdmin, (req, res) => {
     startTime,
     endTime,
     increment: parseInt(increment),
+    depositRequired: !!depositRequired,
+    depositAmount: depositRequired ? Number(depositAmount) : 0,
     lots: [],
     createdAt: new Date().toISOString(),
   };
@@ -60,7 +62,14 @@ router.put('/:id', verifyAdmin, (req, res) => {
 
   if (index === -1) return res.status(404).json({ error: 'Auction not found' });
 
-  auctions[index] = { ...auctions[index], ...req.body };
+  // Only allow updating deposit fields if provided
+  const update = { ...req.body };
+  if (typeof update.depositRequired !== 'undefined') {
+    update.depositRequired = !!update.depositRequired;
+    update.depositAmount = update.depositRequired ? Number(update.depositAmount) : 0;
+  }
+
+  auctions[index] = { ...auctions[index], ...update };
   writeAuctions(auctions);
 
   res.json(auctions[index]);

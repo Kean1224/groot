@@ -17,10 +17,12 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // 🔌 Import API routes
 const auctionsRouter = require('./api/auctions/index');
 const authRouter = require('./api/auth/index'); // <-- ADDED
+const ficaRouter = require('./api/fica'); // <-- ADDED
 
 // 🔗 Connect routes
 app.use('/api/auctions', auctionsRouter);
 app.use('/api/auth', authRouter); // <-- ADDED
+app.use('/api/fica', ficaRouter); // <-- ADDED
 
 // Example route
 app.get('/', (req, res) => {
