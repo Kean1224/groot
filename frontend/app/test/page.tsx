@@ -36,8 +36,23 @@ export default function TestConnection() {
       clearTimeout(timeoutId);
       
       if (corsResponse.ok) {
-        const data = await corsResponse.json();
-        setResult(`✅ CORS TEST SUCCESS: ${JSON.stringify(data)}`);
+        const corsData = await corsResponse.json();
+        
+        // Now test the original ping endpoint
+        const pingResponse = await fetch(pingUrl, {
+          method: 'GET',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (pingResponse.ok) {
+          const pingData = await pingResponse.json();
+          setResult(`✅ BOTH ENDPOINTS SUCCESS!\n\nCORS Test: ${JSON.stringify(corsData)}\n\nOriginal Ping: ${JSON.stringify(pingData)}`);
+        } else {
+          setResult(`✅ CORS TEST SUCCESS: ${JSON.stringify(corsData)}\n\n❌ ORIGINAL PING FAILED: Status ${pingResponse.status}`);
+        }
       } else {
         setResult(`❌ CORS TEST ERROR: Status ${corsResponse.status} - ${corsResponse.statusText}`);
       }
