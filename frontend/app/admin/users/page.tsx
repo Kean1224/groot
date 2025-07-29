@@ -6,9 +6,30 @@ import React, { useEffect, useState } from 'react';
 function BackendStatus() {
   const [status, setStatus] = useState<'checking' | 'ok' | 'fail'>('checking');
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/ping`)
-      .then(r => r.ok ? setStatus('ok') : setStatus('fail'))
-      .catch(() => setStatus('fail'));
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/ping`, {
+      signal: controller.signal,
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(response => {
+        clearTimeout(timeoutId);
+        if (response.ok) {
+          setStatus('ok');
+        } else {
+          console.log('Backend response not ok:', response.status);
+          setStatus('fail');
+        }
+      })
+      .catch(error => {
+        clearTimeout(timeoutId);
+        console.log('Backend ping failed:', error.message);
+        setStatus('fail');
+      });
   }, []);
   return (
     <div className="mb-2 text-xs">
