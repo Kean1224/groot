@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "build-check": "node build-check.js",
+    "deploy": "npm install && npm run build && npm start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
