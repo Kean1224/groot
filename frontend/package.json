@@ -9,6 +9,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "build-check": "node build-check.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
