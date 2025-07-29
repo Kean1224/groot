@@ -37,10 +37,3 @@ function sendNotification(email, payload) {
 
 // Export for use in API
 module.exports = { server, sendNotification };
-
-// Start server if run directly
-if (require.main === module) {
-  server.listen(5050, () => {
-    console.log('WebSocket server running on port 5050');
-  });
-}

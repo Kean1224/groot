@@ -1,4 +1,7 @@
+const path = require('path');
 
+const fs = require('fs');
+const path = require('path');
 const verifyAdmin = require('../auth/verify-admin');
 const dataPath = path.join(__dirname, '../../data/auctionDeposits.json');
 

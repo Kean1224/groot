@@ -1,1 +1,16 @@
 node_modules
+
+# Ignore Next.js build output
+frontend/.next/
+frontend/node_modules/
+backend/node_modules/
+backend/.env
+backend/.env.local
+frontend/.env
+frontend/.env.local
+
+frontend_fixed/
+
+# Backend runtime data and uploads
+uploads/
+data/

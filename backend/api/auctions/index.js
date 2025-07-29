@@ -94,7 +94,6 @@ router.delete('/:id', verifyAdmin, (req, res) => {
   res.json({ message: 'Auction deleted successfully' });
 });
 
-
 // GET /:id/is-registered?email=... - Check if user is registered for auction
 router.get('/:id/is-registered', (req, res) => {
   const { id } = req.params;
