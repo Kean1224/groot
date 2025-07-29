@@ -1,3 +1,13 @@
+// ✅ DELETE user by email
+router.delete('/:email', (req, res) => {
+  const users = readUsers();
+  const email = decodeURIComponent(req.params.email);
+  const idx = users.findIndex(u => u.email === email);
+  if (idx === -1) return res.status(404).json({ error: 'User not found' });
+  const [deleted] = users.splice(idx, 1);
+  writeUsers(users);
+  res.json({ message: 'User deleted', user: deleted });
+});
 const express = require('express');
 const fs = require('fs');
 const path = require('path');

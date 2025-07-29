@@ -74,6 +74,15 @@ export default function AdminUsersPage() {
     fetchUsers();
   };
 
+  // Delete user handler
+  const deleteUser = async (email: string) => {
+    if (!window.confirm('Are you sure you want to delete this user? This cannot be undone.')) return;
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${encodeURIComponent(email)}`, {
+      method: 'DELETE',
+    });
+    fetchUsers();
+  };
+
   return (
     <div className="flex min-h-screen">
       <AdminSidebar />
@@ -93,6 +102,7 @@ export default function AdminUsersPage() {
                 <th className="p-2">Suspended</th>
                 <th className="p-2">Deposit Status</th>
                 <th className="p-2">Actions</th>
+                <th className="p-2">Delete</th>
               </tr>
             </thead>
             <tbody>
@@ -200,6 +210,14 @@ export default function AdminUsersPage() {
                         {user.suspended ? 'Suspended' : 'Active'}
                       </span>
                     </label>
+                  </td>
+                  <td className="p-2">
+                    <button
+                      onClick={() => deleteUser(user.email)}
+                      className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}

@@ -76,6 +76,8 @@ router.post('/register', uploadFica.fields([
   { name: 'proofOfAddress', maxCount: 1 },
   { name: 'idCopy', maxCount: 1 }
 ]), async (req, res) => {
+  console.log('Register request body:', req.body);
+  console.log('Register request files:', req.files);
   const { email, password, name, username, cell } = req.body;
   if (!email || !password || !name || !username) {
     return res.status(400).json({ error: 'Email, password, name, and username required.' });
@@ -107,13 +109,13 @@ router.post('/register', uploadFica.fields([
     suspended: false,
     registeredAt: new Date().toISOString(),
     watchlist: [],
-    fica: {
-      proofOfAddress,
-      idCopy
-    }
+    idDocument: idCopy,
+    proofOfAddress: proofOfAddress
   };
+  console.log('New user to be saved:', newUser);
   users.push(newUser);
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+  console.log('All users after registration:', users);
   // Issue JWT
   const token = jwt.sign({ email, name, role: 'user' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
   res.json({ status: 'success', token, user: { email, name, cell: cell || '', fica: newUser.fica } });
