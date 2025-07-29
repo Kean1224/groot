@@ -10,5 +10,18 @@
     "proofOfAddress": "demo_proof.pdf",
     "watchlist": [],
     "deposits": []
+  },
+  {
+    "email": "keanmartin75@gmail.com",
+    "password": "$2b$10$GU6tRAfLBZzRbQNXdwiZ4.OTFeGxVJeQlB6dzZ5sgQnUCVrU9pBbK",
+    "name": "smit",
+    "username": "kean",
+    "cell": "",
+    "ficaApproved": false,
+    "suspended": false,
+    "registeredAt": "2025-07-29T17:46:45.771Z",
+    "watchlist": [],
+    "idDocument": "idCopy-1753811205583-819263086.png",
+    "proofOfAddress": "proofOfAddress-1753811205508-338433475.png"
   }
 ]

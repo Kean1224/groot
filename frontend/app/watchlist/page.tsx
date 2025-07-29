@@ -24,7 +24,7 @@ export default function WatchlistPage() {
   useEffect(() => {
     if (!userEmail) return;
 
-    fetch(`http://localhost:5000/api/users/${userEmail}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${userEmail}`)
       .then(res => res.json())
       .then(data => {
         if (data.watchlist) setWatchlist(data.watchlist);
@@ -33,7 +33,7 @@ export default function WatchlistPage() {
 
   // ✅ Load all lots
   useEffect(() => {
-    fetch('http://localhost:5000/api/lots')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/lots`)
       .then(res => res.json())
       .then(data => setLots(data));
   }, []);
