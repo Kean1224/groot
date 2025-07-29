@@ -2,7 +2,7 @@
 import "../styles/globals.css";
 import Layout from "../components/Layout";
 import type { Metadata } from "next";
-import React, { useEffect } from "react";
+
 
 export const metadata: Metadata = {
   title: "All4You Auctioneers",
@@ -14,12 +14,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Register service worker for PWA
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js');
-    }
-  }, []);
+  // Service worker registration removed from layout (server component). If needed, move to a client component.
   return (
     <html lang="en">
       <head>
