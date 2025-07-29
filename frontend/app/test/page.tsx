@@ -21,7 +21,7 @@ export default function TestConnection() {
       const response = await fetch(testUrl, {
         signal: controller.signal,
         method: 'GET',
-        credentials: 'include',
+        mode: 'cors',
         headers: {
           'Content-Type': 'application/json',
         },
