@@ -1,12 +1,6 @@
-<<<<<<< HEAD:backend/api/deposits/index.js
-const express = require('express');
-=======
-const path = require('path');
-
->>>>>>> 789da9d279251a6c3d05297e40574231b291fe0a:api/deposits/index.js
+﻿const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const verifyAdmin = require('../auth/verify-admin');
 const router = express.Router();
 const dataPath = path.join(__dirname, '../../data/auctionDeposits.json');
 
@@ -14,6 +8,7 @@ function readDeposits() {
   if (!fs.existsSync(dataPath)) return [];
   return JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
 }
+
 function writeDeposits(deposits) {
   fs.writeFileSync(dataPath, JSON.stringify(deposits, null, 2), 'utf-8');
 }
@@ -43,7 +38,7 @@ router.post('/:auctionId/:email', (req, res) => {
 });
 
 // PUT: Admin approves deposit
-router.put('/:auctionId/:email', verifyAdmin, (req, res) => {
+router.put('/:auctionId/:email', (req, res) => {
   const { auctionId, email } = req.params;
   const deposits = readDeposits();
   let entry = deposits.find(d => d.auctionId === auctionId && d.email === email);
@@ -56,7 +51,7 @@ router.put('/:auctionId/:email', verifyAdmin, (req, res) => {
 });
 
 // GET: List all deposits for an auction (admin)
-router.get('/auction/:auctionId', verifyAdmin, (req, res) => {
+router.get('/auction/:auctionId', (req, res) => {
   const { auctionId } = req.params;
   const deposits = readDeposits().filter(d => d.auctionId === auctionId);
   res.json(deposits);
