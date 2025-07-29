@@ -82,8 +82,9 @@ echo.
 echo Backend Service Configuration:
 echo   Name: groot-backend
 echo   Environment: Node
-echo   Build Command: cd backend ^&^& npm install
-echo   Start Command: cd backend ^&^& npm start
+echo   Root Directory: backend
+echo   Build Command: npm install
+echo   Start Command: npm start
 echo   Environment Variables:
 echo     NODE_ENV=production
 echo     PORT=10000
@@ -92,8 +93,9 @@ echo.
 echo Frontend Service Configuration:
 echo   Name: groot-frontend
 echo   Environment: Node
-echo   Build Command: cd frontend ^&^& npm install ^&^& npm run build
-echo   Start Command: cd frontend ^&^& npm start
+echo   Root Directory: frontend
+echo   Build Command: npm install ^&^& npm run build
+echo   Start Command: npm start
 echo   Environment Variables:
 echo     NODE_ENV=production
 echo     NEXT_PUBLIC_API_URL=https://groot-backend.onrender.com

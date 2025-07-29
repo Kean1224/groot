@@ -33,9 +33,9 @@ This guide walks you through deploying your auction platform to Render with sepa
    Environment: Node
    Region: Oregon (US West)
    Branch: main
-   Root Directory: . (leave empty)
-   Build Command: cd backend && npm install
-   Start Command: cd backend && npm start
+   Root Directory: backend
+   Build Command: npm install
+   Start Command: npm start
    ```
 
 4. **Environment Variables** (Add these in Render dashboard)
@@ -62,9 +62,9 @@ This guide walks you through deploying your auction platform to Render with sepa
    Environment: Node
    Region: Oregon (US West)
    Branch: main
-   Root Directory: . (leave empty)
-   Build Command: cd frontend && npm install && npm run build
-   Start Command: cd frontend && npm start
+   Root Directory: frontend
+   Build Command: npm install && npm run build
+   Start Command: npm start
    ```
 
 3. **Environment Variables**
@@ -155,6 +155,32 @@ NEXT_PUBLIC_API_URL=https://groot-backend.onrender.com
 1. Go to your service in Render dashboard
 2. Click "Logs" tab
 3. View real-time application output
+
+## Quick Fix for Common Deployment Error
+
+### Error: "cd: frontend: No such file or directory"
+
+If you see this error, it means the Root Directory is not set correctly. Here's how to fix it:
+
+**For Frontend Service:**
+1. Go to your frontend service in Render dashboard
+2. Click "Settings" 
+3. Scroll to "Build & Deploy"
+4. Set **Root Directory** to: `frontend`
+5. Set **Build Command** to: `npm install && npm run build`
+6. Set **Start Command** to: `npm start`
+7. Click "Save Changes"
+
+**For Backend Service:**
+1. Go to your backend service in Render dashboard
+2. Click "Settings"
+3. Scroll to "Build & Deploy" 
+4. Set **Root Directory** to: `backend`
+5. Set **Build Command** to: `npm install`
+6. Set **Start Command** to: `npm start`
+7. Click "Save Changes"
+
+After making these changes, redeploy both services.
 
 ## Troubleshooting Common Issues
 

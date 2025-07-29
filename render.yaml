@@ -4,8 +4,8 @@ services:
     name: groot-backend
     env: node
     plan: free
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && npm start
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -15,15 +15,15 @@ services:
         value: https://groot-frontend.onrender.com
     # Auto-deploy from main branch
     branch: main
-    rootDir: .
+    rootDir: backend
 
   # Frontend Service  
   - type: web
     name: groot-frontend
     env: node
     plan: free
-    buildCommand: cd frontend && npm install && npm run build
-    startCommand: cd frontend && npm start
+    buildCommand: npm install && npm run build
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -31,4 +31,4 @@ services:
         value: https://groot-backend.onrender.com
     # Auto-deploy from main branch
     branch: main
-    rootDir: .
+    rootDir: frontend
