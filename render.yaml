@@ -1,7 +1,7 @@
 services:
   # Backend Service
   - type: web
-    name: groot-backend
+    name: groot-2
     env: node
     plan: free
     buildCommand: npm install
@@ -28,7 +28,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_URL
-        value: https://groot-backend.onrender.com
+        value: https://groot-2.onrender.com/api
     # Auto-deploy from main branch
     branch: main
     rootDir: frontend
