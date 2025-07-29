@@ -2,6 +2,20 @@
 
 
 import React, { useEffect, useState } from 'react';
+// Backend status indicator
+function BackendStatus() {
+  const [status, setStatus] = useState<'checking' | 'ok' | 'fail'>('checking');
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/ping`)
+      .then(r => r.ok ? setStatus('ok') : setStatus('fail'))
+      .catch(() => setStatus('fail'));
+  }, []);
+  return (
+    <div className="mb-2 text-xs">
+      Backend status: {status === 'checking' ? 'Checking...' : status === 'ok' ? '🟢 Connected' : '🔴 Not reachable'}
+    </div>
+  );
+}
 import AdminSidebar from '../../../components/AdminSidebar';
 
 type Deposit = {
@@ -87,6 +101,7 @@ export default function AdminUsersPage() {
     <div className="flex min-h-screen">
       <AdminSidebar />
       <main className="flex-1 p-6 max-w-5xl mx-auto">
+        <BackendStatus />
         <h1 className="text-3xl font-bold mb-6 text-yellow-600">User Management</h1>
         {users.length === 0 ? (
           <p>No users found.</p>
