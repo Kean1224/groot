@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getToken } from "../../utils/auth";
+
+// Helper to get token from localStorage (if needed)
+function getToken() {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('token');
+}
 
 // Types for invoices
 interface Invoice {
