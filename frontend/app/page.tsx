@@ -10,7 +10,7 @@ export default function HomePage() {
         <div className="mb-6 flex flex-col items-center">
           <div className="w-36 h-36 rounded-full bg-white shadow-xl border-4 border-yellow-300 flex items-center justify-center overflow-hidden">
             <img
-              src="/img/ChatGPT%20Image%20Jul%2028,%202025,%2011_14_52%20PM.png"
+              src="/img/logo.png.png"
               alt="All4You Auctioneers Logo"
               className="object-contain w-32 h-32"
               style={{ maxWidth: 128, maxHeight: 128 }}

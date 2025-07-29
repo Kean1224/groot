@@ -4,7 +4,14 @@ const fs = require('fs');
 const path = require('path');
 
 const server = http.createServer();
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ 
+  server,
+  // Allow connections from anywhere in production
+  verifyClient: (info) => {
+    // In production, you might want to add origin validation here
+    return true;
+  }
+});
 
 // Track clients by email
 const clients = new Map();

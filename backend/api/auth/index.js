@@ -131,8 +131,8 @@ router.post('/login', async (req, res) => {
     return res.status(500).json({ error: 'User data not found.' });
   }
   const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
-  // Admin hardcoded user (optional fallback)
-  if (email === 'admin@all4you.com' && password === 'admin123') {
+  // Admin hardcoded user (updated with your credentials)
+  if (email === 'Keanmartin75@gmail.com' && password === 'Tristan@89') {
     const token = jwt.sign({ email, role: 'admin' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     return res.json({ role: 'admin', status: 'success', email, token });
   }
@@ -157,6 +157,22 @@ router.post('/login', async (req, res) => {
     status: 'success',
     token
   });
+});
+
+// POST /api/auth/admin-login - separate admin login endpoint
+router.post('/admin-login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password required.' });
+  }
+  
+  // Admin credentials check
+  if (email === 'Keanmartin75@gmail.com' && password === 'Tristan@89') {
+    const token = jwt.sign({ email, role: 'admin' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    return res.json({ role: 'admin', status: 'success', email, token });
+  }
+  
+  return res.status(401).json({ error: 'Invalid admin credentials.' });
 });
 
 

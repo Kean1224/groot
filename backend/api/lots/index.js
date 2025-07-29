@@ -308,5 +308,4 @@ router.put('/:auctionId/:lotId/bid', authenticateToken, async (req, res) => {
 });
 
 module.exports = router;
-          if (wsNotify) wsNotify(lastBidder, { message: `You've been outbid on lot ${lot.title}!` });
 

@@ -1,8 +1,8 @@
-const path = require('path');
-
+const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const verifyAdmin = require('../auth/verify-admin');
+const router = express.Router();
 const dataPath = path.join(__dirname, '../../data/auctionDeposits.json');
 
 function readDeposits() {
