@@ -13,4 +13,4 @@ frontend_fixed/
 
 # Backend runtime data and uploads
 uploads/
-data/
+# data/ - Comment out this line to include initial data files

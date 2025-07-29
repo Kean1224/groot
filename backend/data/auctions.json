@@ -1,0 +1,82 @@
+[
+  {
+    "id": "1",
+    "title": "Demo Auction 1",
+    "lots": [
+      {
+        "id": "lot1",
+        "title": "Antique Vase",
+        "description": "A beautiful antique vase from the 19th century.",
+        "imageUrl": "",
+        "currentBid": 170,
+        "status": "open",
+        "bidHistory": [
+          {
+            "bidderEmail": "demo@example.com",
+            "amount": 110,
+            "time": "2025-07-22T20:45:31.300Z"
+          },
+          {
+            "bidderEmail": "demo@example.com",
+            "amount": 120,
+            "time": "2025-07-22T20:45:36.111Z"
+          },
+          {
+            "bidderEmail": "demo@example.com",
+            "amount": 130,
+            "time": "2025-07-23T12:08:00.077Z"
+          },
+          {
+            "bidderEmail": "demo@example.com",
+            "amount": 140,
+            "time": "2025-07-23T12:08:08.207Z"
+          },
+          {
+            "bidderEmail": "demo@example.com",
+            "amount": 150,
+            "time": "2025-07-23T12:13:19.930Z"
+          },
+          {
+            "bidderEmail": "demo@example.com",
+            "amount": 160,
+            "time": "2025-07-23T12:14:25.575Z"
+          },
+          {
+            "bidderEmail": "demo@example.com",
+            "amount": 170,
+            "time": "2025-07-23T12:14:30.417Z"
+          }
+        ],
+        "bidIncrement": 10
+      }
+    ],
+    "depositRequired": false,
+    "depositAmount": 0
+  },
+  {
+    "id": "8270dae3-c829-4def-b509-03f8a9f0563f",
+    "title": "efdfedgf",
+    "description": "",
+    "location": "rgfafdvdxv",
+    "startTime": "2025-07-23T22:59",
+    "endTime": "2025-07-26T22:59",
+    "increment": 50,
+    "lots": [],
+    "depositRequired": false,
+    "depositAmount": 0,
+    "createdAt": "2025-07-22T20:59:14.335Z"
+  },
+  {
+    "id": "0a5bad08-8474-45d5-bc71-7204616cdf81",
+    "title": "iuh",
+    "description": "",
+    "location": "iupg",
+    "startTime": "2025-07-23T14:15",
+    "endTime": "2025-07-25T14:15",
+    "increment": 50,
+    "lots": [],
+    "depositRequired": false,
+    "depositAmount": 0,
+    "createdAt": "2025-07-23T12:16:02.326Z"
+  }
+]
