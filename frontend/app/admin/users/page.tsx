@@ -12,6 +12,7 @@ function BackendStatus() {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/ping`, {
       signal: controller.signal,
       method: 'GET',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
