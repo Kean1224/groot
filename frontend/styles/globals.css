@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global Reset & Font */
+body {
+  @apply font-sans bg-white text-gray-800;
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Links */
+a {
+  @apply transition-colors duration-200 ease-in-out;
+}
+a:hover {
+  @apply text-yellow-600;
+}
+
+/* Buttons */
+button {
+  @apply transition duration-150 ease-in-out;
+}
+button:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Inputs */
+input,
+textarea,
+select {
+  @apply border border-gray-300 rounded px-3 py-2 w-full text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5 {
+  @apply font-bold text-gray-900;
+}
+h1 { @apply text-4xl md:text-5xl; }
+h2 { @apply text-3xl md:text-4xl; }
+h3 { @apply text-2xl; }
+
+/* Containers */
+.container {
+  @apply max-w-6xl mx-auto px-4;
+}
+
+/* Cards */
+.card {
+  @apply bg-white p-4 rounded-lg shadow hover:shadow-md transition;
+}
+
+/* Fade In Animation */
+.fade-in {
+  animation: fadeIn 0.4s ease-in-out forwards;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
