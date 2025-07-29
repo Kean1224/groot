@@ -14,9 +14,9 @@ export default function TestConnection() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
       
-      console.log('Testing URL:', process.env.NEXT_PUBLIC_API_URL + '/ping');
+      console.log('Testing URL:', process.env.NEXT_PUBLIC_API_URL + '/api/ping');
       
-      const response = await fetch(process.env.NEXT_PUBLIC_API_URL + '/ping', {
+      const response = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/ping', {
         signal: controller.signal,
         method: 'GET',
         credentials: 'include',

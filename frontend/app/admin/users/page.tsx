@@ -9,7 +9,7 @@ function BackendStatus() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
     
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/ping`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ping`, {
       signal: controller.signal,
       method: 'GET',
       credentials: 'include',
