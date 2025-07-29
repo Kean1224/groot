@@ -1,15 +1,25 @@
 const express = require('express');
-const cors = require('cors');
+const cors = require('./cors-config'); // Use dedicated CORS config
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
 
 const app = express();
+const depositsRouter = require('./api/deposits/index');
 const PORT = process.env.PORT || 5000;
+
+// CRITICAL: Apply CORS middleware FIRST (before any routes)
+app.use(cors);
+app.use(bodyParser.json());
 
 // Health check endpoint for frontend-backend communication
 app.get('/api/ping', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+  console.log('Ping request from:', req.get('origin'));
+  res.json({ 
+    status: 'ok', 
+    time: new Date().toISOString(),
+    version: '1.4-cors-fixed-forced' // CORS middleware moved before this endpoint
+  });
 });
 
 // Health check for Render.com
@@ -28,52 +38,50 @@ try {
   console.error('WebSocket server failed to start:', e);
 }
 
-// Middleware
-app.use(cors({
-  origin: [
-    'http://localhost:3000', 
-    'http://localhost:3001', 
-    'https://your-frontend-app.onrender.com', // Update this with your actual Render frontend URL
-    process.env.FRONTEND_URL
-  ].filter(Boolean),
-  credentials: true
-}));
-app.use(bodyParser.json());
+// Middleware - Static file serving
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Import API routes
+// Add CORS test endpoint
+const corsTestRouter = require('./cors-test-endpoint');
+app.use('/api', corsTestRouter);
+
+app.use('/api/deposits', depositsRouter);
+
+// 🔌 Import API routes
 const auctionsRouter = require('./api/auctions/index');
-const authRouter = require('./api/auth/index');
-const contactRouter = require('./api/contact');
-const depositsRouter = require('./api/deposits/index');
+const authRouter = require('./api/auth/index'); // <-- ADDED
 const ficaRouter = require('./api/fica');
-const invoiceRouter = require('./api/invoices/index');
-const lotsRouter = require('./api/lots/index');
 const pendingItemsRouter = require('./api/pending-items');
 const pendingUsersRouter = require('./api/pending-users');
-const refundsRouter = require('./api/refunds/index');
-const sellItemRouter = require('./api/sell-item/index');
-const usersRouter = require('./api/users/index');
 
-// Connect routes
+// 🔗 Connect routes
 app.use('/api/auctions', auctionsRouter);
-app.use('/api/auth', authRouter);
-app.use('/api/contact', contactRouter);
-app.use('/api/deposits', depositsRouter);
+app.use('/api/auth', authRouter); // <-- ADDED
 app.use('/api/fica', ficaRouter);
-app.use('/api/invoices', invoiceRouter);
-app.use('/api/lots', lotsRouter);
 app.use('/api/pending-items', pendingItemsRouter);
 app.use('/api/pending-users', pendingUsersRouter);
-app.use('/api/refunds', refundsRouter);
-app.use('/api/sell-item', sellItemRouter);
-app.use('/api/users', usersRouter);
 
-// Default route
+// Example route
 app.get('/', (req, res) => {
   res.send('All4You Backend API is running...');
 });
 
+
+const contactRouter = require('./api/contact');
+const invoiceRouter = require('./api/invoices/index');
+app.use('/api/invoices', invoiceRouter);
+
+const lotsRouter = require('./api/lots/index');
+app.use('/api/lots', lotsRouter);
+const sellItemRouter = require('./api/sell-item/index');
+app.use('/api/sell-item', sellItemRouter);
+const usersRouter = require('./api/users/index');
+app.use('/api/users', usersRouter);
+
+// Refunds API
+const refundsRouter = require('./api/refunds/index');
+app.use('/api/refunds', refundsRouter);
+
 app.listen(PORT, () => {
-  console.log(`🚀 Backend server running at http://localhost:${PORT}`);
+  console.log(`All4You Backend API is running on port ${PORT}`);
 });
