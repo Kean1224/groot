@@ -14,11 +14,17 @@ export default function TestConnection() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
       
-      const testUrl = process.env.NEXT_PUBLIC_API_URL + '/api/ping';
-      console.log('Environment API URL:', process.env.NEXT_PUBLIC_API_URL);
-      console.log('Full testing URL:', testUrl);
+      // Test both regular ping and CORS test endpoint
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const pingUrl = baseUrl + '/api/ping';
+      const corsTestUrl = baseUrl + '/api/ping-cors-test';
       
-      const response = await fetch(testUrl, {
+      console.log('Environment API URL:', baseUrl);
+      console.log('Testing ping URL:', pingUrl);
+      console.log('Testing CORS URL:', corsTestUrl);
+      
+      // Try the CORS test endpoint first
+      const corsResponse = await fetch(corsTestUrl, {
         signal: controller.signal,
         method: 'GET',
         mode: 'cors',
@@ -29,11 +35,11 @@ export default function TestConnection() {
       
       clearTimeout(timeoutId);
       
-      if (response.ok) {
-        const data = await response.json();
-        setResult(`✅ SUCCESS: ${JSON.stringify(data)}`);
+      if (corsResponse.ok) {
+        const data = await corsResponse.json();
+        setResult(`✅ CORS TEST SUCCESS: ${JSON.stringify(data)}`);
       } else {
-        setResult(`❌ ERROR: Status ${response.status} - ${response.statusText}`);
+        setResult(`❌ CORS TEST ERROR: Status ${corsResponse.status} - ${corsResponse.statusText}`);
       }
     } catch (error) {
       setResult(`❌ FAILED: ${error.message}`);
