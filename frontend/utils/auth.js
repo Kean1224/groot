@@ -1,12 +1,12 @@
 // Utility functions for storing and retrieving JWT token
 
-export function setToken(token: string) {
+export function setToken(token) {
   if (typeof window !== 'undefined') {
     localStorage.setItem('jwt_token', token);
   }
 }
 
-export function getToken(): string | null {
+export function getToken() {
   if (typeof window !== 'undefined') {
     return localStorage.getItem('jwt_token');
   }
