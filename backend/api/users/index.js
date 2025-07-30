@@ -129,7 +129,25 @@ ensureDemoUser();
 // ✅ GET all users
 router.get('/', (req, res) => {
   const users = readUsers();
-  res.json(users);
+  
+  // Load deposit data and merge it with users
+  const depositsPath = path.join(__dirname, '../deposits/../../data/auctionDeposits.json');
+  let deposits = [];
+  if (fs.existsSync(depositsPath)) {
+    deposits = JSON.parse(fs.readFileSync(depositsPath, 'utf-8'));
+  }
+  
+  // Add deposit information to each user
+  const usersWithDeposits = users.map(user => ({
+    ...user,
+    deposits: deposits.filter(d => d.email === user.email).map(d => ({
+      auctionId: d.auctionId,
+      status: d.status === 'approved' ? 'paid' : d.status === 'pending' ? 'pending' : d.status,
+      returned: d.status === 'returned'
+    }))
+  }));
+  
+  res.json(usersWithDeposits);
 });
 
 // ✅ GET single user
@@ -247,6 +265,17 @@ router.put('/:email/watchlist', (req, res) => {
 
   writeUsers(users);
   res.json({ message: 'Watchlist updated', watchlist: user.watchlist });
+});
+
+// ✅ DELETE user by email (admin only)
+router.delete('/:email', verifyAdmin, (req, res) => {
+  const users = readUsers();
+  const email = decodeURIComponent(req.params.email);
+  const idx = users.findIndex(u => u.email === email);
+  if (idx === -1) return res.status(404).json({ error: 'User not found' });
+  const [deleted] = users.splice(idx, 1);
+  writeUsers(users);
+  res.json({ message: 'User deleted', user: deleted });
 });
 
 module.exports = router;

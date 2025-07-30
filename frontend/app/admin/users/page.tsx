@@ -42,7 +42,7 @@ import AdminSidebar from '../../../components/AdminSidebar';
 
 type Deposit = {
   auctionId: string;
-  status: 'paid' | 'return_in_progress' | 'returned';
+  status: 'paid' | 'pending' | 'return_in_progress' | 'returned';
   returned: boolean;
 };
 type User = {
@@ -87,7 +87,6 @@ export default function AdminUsersPage() {
     body: JSON.stringify({ suspended: !suspended }),
   });
   await fetchUsers();
-    fetchUsers();
   };
 
   const approveFica = async (email: string) => {
@@ -105,6 +104,18 @@ export default function AdminUsersPage() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, auctionId, status }),
+    });
+    setDepositActionLoading('');
+    fetchUsers();
+  };
+
+  // Admin approves pending deposit
+  const approveDeposit = async (email: string, auctionId: string) => {
+    setDepositActionLoading(email + auctionId + 'approve');
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/deposits/${auctionId}/${encodeURIComponent(email)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'approved' }),
     });
     setDepositActionLoading('');
     fetchUsers();
@@ -156,7 +167,7 @@ export default function AdminUsersPage() {
                       <>
                         {user.idDocument && (
                           <a
-                            href={`/uploads/fica/${user.idDocument}`}
+                            href={`${process.env.NEXT_PUBLIC_API_URL}/uploads/fica/${user.idDocument}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-500 underline mr-2"
@@ -166,7 +177,7 @@ export default function AdminUsersPage() {
                         )}
                         {user.proofOfAddress && (
                           <a
-                            href={`/uploads/fica/${user.proofOfAddress}`}
+                            href={`${process.env.NEXT_PUBLIC_API_URL}/uploads/fica/${user.proofOfAddress}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-500 underline mr-2"
@@ -199,11 +210,21 @@ export default function AdminUsersPage() {
                               <span className="font-semibold text-xs">{auction.title}:</span>
                               <span className="text-xs">
                                 {deposit?.status === 'paid' && 'Paid'}
+                                {deposit?.status === 'pending' && 'Pending Approval'}
                                 {deposit?.status === 'return_in_progress' && 'Return in Progress'}
                                 {deposit?.status === 'returned' && 'Returned'}
                                 {!deposit && 'Not Paid'}
                               </span>
                               {/* Admin actions */}
+                              {deposit && deposit.status === 'pending' && (
+                                <button
+                                  className="px-2 py-1 text-xs bg-green-500 text-white rounded disabled:opacity-50"
+                                  disabled={depositActionLoading === user.email + auction.id + 'approve'}
+                                  onClick={() => approveDeposit(user.email, auction.id)}
+                                >
+                                  Approve Deposit
+                                </button>
+                              )}
                               {deposit && deposit.status === 'paid' && (
                                 <button
                                   className="px-2 py-1 text-xs bg-yellow-500 text-white rounded disabled:opacity-50"
@@ -233,13 +254,7 @@ export default function AdminUsersPage() {
                       <input
                         type="checkbox"
                         checked={!!user.suspended}
-                        onChange={async (e) => {
-                          await toggleSuspend(user.email, user.suspended);
-                          // Optimistically update UI
-                          setUsers((prev) => prev.map(u =>
-                            u.email === user.email ? { ...u, suspended: !user.suspended } : u
-                          ));
-                        }}
+                        onChange={() => toggleSuspend(user.email, user.suspended)}
                         className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-yellow-400 rounded-full peer peer-checked:bg-blue-500 transition-all"></div>
