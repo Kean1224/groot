@@ -6,30 +6,35 @@ import { useEffect, useState } from 'react';
 type Auction = {
   id: string;
   title: string;
-  description: string;
+  description?: string;
+  location?: string;
+  startTime?: string;
+  endTime?: string;
   imageUrl?: string;
 };
 
 export default function AuctionsPage() {
   const [auctions, setAuctions] = useState<Auction[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulated fetch
-    const fetchedAuctions: Auction[] = [
-      {
-        id: '1',
-        title: 'Loose Asset Auction',
-        description: 'Generators, grinders, lawnmowers, tools and more.',
-        imageUrl: '/auctions/assets.jpg',
-      },
-      {
-        id: '2',
-        title: 'Vehicle Auction',
-        description: 'Double cabs, bakkies, cars, and non-runners available.',
-        imageUrl: '/auctions/vehicles.jpg',
-      },
-    ];
-    setAuctions(fetchedAuctions);
+    const fetchAuctions = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions`);
+        if (response.ok) {
+          const data = await response.json();
+          setAuctions(data);
+        } else {
+          console.error('Failed to fetch auctions:', response.status);
+        }
+      } catch (error) {
+        console.error('Error fetching auctions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAuctions();
   }, []);
 
   return (
@@ -38,7 +43,9 @@ export default function AuctionsPage() {
         Available Auctions
       </h1>
 
-      {auctions.length === 0 ? (
+      {loading ? (
+        <p className="text-center text-gray-500">Loading auctions...</p>
+      ) : auctions.length === 0 ? (
         <p className="text-center text-gray-500">No auctions available right now. Please check back later.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -57,7 +64,16 @@ export default function AuctionsPage() {
               )}
               <div className="p-5">
                 <h2 className="text-xl font-bold text-yellow-700 mb-2">{auction.title}</h2>
-                <p className="text-gray-600 text-sm">{auction.description}</p>
+                <p className="text-gray-600 text-sm mb-2">{auction.description || 'No description available'}</p>
+                {auction.location && (
+                  <p className="text-gray-500 text-xs mb-1">📍 {auction.location}</p>
+                )}
+                {auction.startTime && auction.endTime && (
+                  <div className="text-gray-500 text-xs">
+                    <p>🕒 Starts: {new Date(auction.startTime).toLocaleDateString()}</p>
+                    <p>🏁 Ends: {new Date(auction.endTime).toLocaleDateString()}</p>
+                  </div>
+                )}
               </div>
             </Link>
           ))}

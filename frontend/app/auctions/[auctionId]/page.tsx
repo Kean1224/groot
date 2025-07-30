@@ -32,6 +32,7 @@ export default function AuctionDetailPage() {
   const auctionId = params?.auctionId;
   // --- State ---
   const [auction, setAuction] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [auctionTitle, setAuctionTitle] = useState('Auction Title');
@@ -47,10 +48,38 @@ export default function AuctionDetailPage() {
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
   const [pendingUsersLoading, setPendingUsersLoading] = useState(false);
 
+  // Fetch auction data
+  useEffect(() => {
+    if (!auctionId) return;
+    
+    const fetchAuction = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions`);
+        if (response.ok) {
+          const auctions = await response.json();
+          const foundAuction = auctions.find((a: any) => a.id === auctionId);
+          if (foundAuction) {
+            setAuction(foundAuction);
+            setAuctionTitle(foundAuction.title);
+            if (foundAuction.endTime) {
+              setAuctionEnd(new Date(foundAuction.endTime).getTime());
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching auction:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAuction();
+  }, [auctionId]);
+
   // Fetch all FICA uploads for admin
   const fetchFicaList = () => {
     setFicaListLoading(true);
-    fetch('/api/fica')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/fica`)
       .then(res => res.json())
       .then(data => setFicaList(data || []))
       .finally(() => setFicaListLoading(false));
@@ -58,7 +87,7 @@ export default function AuctionDetailPage() {
   // Fetch all pending user registrations for admin
   const fetchPendingUsers = () => {
     setPendingUsersLoading(true);
-    fetch('/api/pending-users')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pending-users`)
       .then(res => res.json())
       .then(data => setPendingUsers(data || []))
       .finally(() => setPendingUsersLoading(false));
@@ -72,31 +101,48 @@ export default function AuctionDetailPage() {
 
   // Admin approve/reject handlers for FICA
   const handleApproveFica = async (email: string) => {
-    await fetch(`/api/fica/${email}/approve`, { method: 'POST' });
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/fica/${email}/approve`, { method: 'POST' });
     setFicaList(list => list.map(f => f.email === email ? { ...f, status: 'approved' } : f));
   };
   const handleRejectFica = async (email: string) => {
-    await fetch(`/api/fica/${email}/reject`, { method: 'POST' });
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/fica/${email}/reject`, { method: 'POST' });
     setFicaList(list => list.map(f => f.email === email ? { ...f, status: 'rejected' } : f));
   };
   // Admin approve/reject handlers for pending users
   const handleApproveUser = async (email: string) => {
-    await fetch(`/api/pending-users/${email}/approve`, { method: 'POST' });
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pending-users/${email}/approve`, { method: 'POST' });
     setPendingUsers(list => list.filter(u => u.email !== email));
   };
   const handleRejectUser = async (email: string) => {
-    await fetch(`/api/pending-users/${email}/reject`, { method: 'POST' });
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pending-users/${email}/reject`, { method: 'POST' });
     setPendingUsers(list => list.filter(u => u.email !== email));
   };
   const [lots, setLots] = useState<Lot[]>([]);
-  const [userEmail] = useState('user@example.com');
+  const [userEmail, setUserEmail] = useState<string>('');
   // FICA logic
   const [ficaStatus, setFicaStatus] = useState<'not_uploaded' | 'pending' | 'approved' | 'rejected'>('not_uploaded');
   const [ficaLoading, setFicaLoading] = useState(false);
+
+  // Get current user session
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/session`, { 
+      credentials: 'include' 
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.email) {
+          setUserEmail(data.email);
+        }
+      })
+      .catch(() => {
+        // User not logged in, redirect to login or show message
+        console.log('User not logged in');
+      });
+  }, []);
   // Fetch FICA status if no deposit required
   useEffect(() => {
     if (!auctionId || !userEmail || auction?.depositRequired) return;
-    fetch(`/api/fica/${userEmail}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/fica/${userEmail}`)
       .then(res => res.json())
       .then(data => setFicaStatus(data.status || 'not_uploaded'));
   }, [auctionId, userEmail, auction]);
@@ -107,7 +153,7 @@ export default function AuctionDetailPage() {
     setFicaLoading(true);
     const formData = new FormData();
     formData.append('file', e.target.files[0]);
-    await fetch(`/api/fica/${userEmail}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/fica/${userEmail}`, {
       method: 'POST',
       body: formData,
     });
@@ -149,7 +195,7 @@ export default function AuctionDetailPage() {
   const handleRegister = async () => {
     setRegisterLoading(true);
     try {
-      const res = await fetch(`/api/auctions/${auctionId}/register`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions/${auctionId}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: userEmail })
@@ -169,7 +215,7 @@ export default function AuctionDetailPage() {
   // Fetch deposit status
   useEffect(() => {
     if (!auctionId || !userEmail) return;
-    fetch(`/api/deposits/${auctionId}/${userEmail}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/deposits/${auctionId}/${userEmail}`)
       .then(res => res.json())
       .then(data => setDepositStatus(data.status || 'not_paid'));
   }, [auctionId, userEmail]);
@@ -181,7 +227,7 @@ export default function AuctionDetailPage() {
     if (!auctionId) return;
     const fetchLots = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auctions/${auctionId}/lots`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions/${auctionId}/lots`);
         if (res.ok) {
           const data = await res.json();
           setLots(data.lots || []);
@@ -199,7 +245,7 @@ export default function AuctionDetailPage() {
   const handleDepositRequest = async () => {
     if (!auctionId || !userEmail) return;
     setDepositLoading(true);
-    await fetch(`/api/deposits/${auctionId}/${userEmail}`, { method: 'POST' });
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/deposits/${auctionId}/${userEmail}`, { method: 'POST' });
     setDepositLoading(false);
     setDepositStatus('pending');
     alert('Please pay the deposit to the provided banking details. Your payment will be reviewed by admin.');

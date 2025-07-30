@@ -13,10 +13,10 @@ export default function AssignSellerPage() {
   const [status, setStatus] = useState('');
 
   useEffect(() => {
-    fetch('/api/auctions')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions`)
       .then(res => res.json())
       .then(setAuctions);
-    fetch('/api/users')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`)
       .then(res => res.json())
       .then(data => setUsers(data.filter((u: any) => u.role !== 'admin' && !u.suspended)));
   }, []);

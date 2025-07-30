@@ -94,6 +94,18 @@ router.delete('/:id', verifyAdmin, (req, res) => {
   res.json({ message: 'Auction deleted successfully' });
 });
 
+// GET /:id/lots - Get all lots for a specific auction
+router.get('/:id/lots', (req, res) => {
+  const { id } = req.params;
+  const auctions = readAuctions();
+  const auction = auctions.find(a => a.id === id);
+  
+  if (!auction) return res.status(404).json({ error: 'Auction not found' });
+  
+  const lots = readLotsForAuction(auction);
+  res.json({ lots });
+});
+
 // GET /:id/is-registered?email=... - Check if user is registered for auction
 router.get('/:id/is-registered', (req, res) => {
   const { id } = req.params;
@@ -121,8 +133,6 @@ router.post('/:id/register', (req, res) => {
   }
   res.json({ success: true });
 });
-
-module.exports = router;
 
 // POST /:id/rerun - Duplicate auction and its lots with new start/end dates (admin only)
 router.post('/:id/rerun', verifyAdmin, (req, res) => {
@@ -160,3 +170,5 @@ router.post('/:id/rerun', verifyAdmin, (req, res) => {
   writeAuctions(auctions);
   res.status(201).json(newAuction);
 });
+
+module.exports = router;
