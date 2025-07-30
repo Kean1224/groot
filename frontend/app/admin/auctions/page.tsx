@@ -162,7 +162,7 @@ export default function AdminAuctionsPage() {
                           onClick={async () => {
                             if (!confirm('End this auction? This will notify winners and sellers and cannot be undone.')) return;
                             try {
-                              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/lots/${auction.id}/end`, { method: 'POST' });
+                              const res = await fetch(`/api/lots/${auction.id}/end`, { method: 'POST' });
                               const data = await res.json();
                               if (res.ok) {
                                 alert('Auction ended. Notifications sent.');

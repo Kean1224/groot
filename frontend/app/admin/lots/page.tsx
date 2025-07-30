@@ -54,13 +54,13 @@ export default function AdminLotsPage() {
   }, []);
 
   const fetchAuctions = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auctions`);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions`);
     const data = await res.json();
     setAuctions(data);
   };
 
   const fetchUsers = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`);
     const data = await res.json();
     setUsers(data.filter((u: User) => u.role !== 'admin' && !u.suspended));
   };
@@ -84,7 +84,7 @@ export default function AdminLotsPage() {
       formData.append('condition', form.condition);
     }
 
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/lots/${selectedAuctionId}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/lots/${selectedAuctionId}`, {
       method: 'POST',
       body: formData
     });
@@ -123,7 +123,7 @@ export default function AdminLotsPage() {
   const handleDelete = async (auctionId: string, lotId: string, lotNumber?: number, auctionTitle?: string) => {
     const message = `Are you sure you want to delete Lot${lotNumber ? ' ' + lotNumber : ''} from Auction${auctionTitle ? ' \'' + auctionTitle + '\'' : ''}?`;
     if (!confirm(message)) return;
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/lots/${auctionId}/${lotId}`, { method: 'DELETE' });
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/lots/${auctionId}/${lotId}`, { method: 'DELETE' });
     fetchAuctions();
   };
 

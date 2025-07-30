@@ -70,18 +70,18 @@ export default function AdminUsersPage() {
   }, []);
 
   const fetchUsers = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`);
     const data = await res.json();
     setUsers(data);
   };
   const fetchAuctions = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auctions`);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions`);
     const data = await res.json();
     setAuctions(data);
   };
 
   const toggleSuspend = async (email: string, suspended?: boolean) => {
-  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/suspend/${encodeURIComponent(email)}`, {
+  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/suspend/${encodeURIComponent(email)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ suspended: !suspended }),
@@ -91,7 +91,7 @@ export default function AdminUsersPage() {
   };
 
   const approveFica = async (email: string) => {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/fica/${encodeURIComponent(email)}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/fica/${encodeURIComponent(email)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -101,7 +101,7 @@ export default function AdminUsersPage() {
   // Admin marks deposit as returned or in progress
   const handleDepositStatus = async (email: string, auctionId: string, status: 'in_progress' | 'returned') => {
     setDepositActionLoading(email + auctionId + status);
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deposits/return`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/deposits/return`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, auctionId, status }),
@@ -113,7 +113,7 @@ export default function AdminUsersPage() {
   // Delete user handler
   const deleteUser = async (email: string) => {
     if (!window.confirm('Are you sure you want to delete this user? This cannot be undone.')) return;
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${encodeURIComponent(email)}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${encodeURIComponent(email)}`, {
       method: 'DELETE',
     });
     fetchUsers();

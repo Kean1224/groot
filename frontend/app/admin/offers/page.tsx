@@ -25,7 +25,7 @@ export default function AdminOffersPage() {
   }, []);
 
   const fetchOffers = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sell-item`);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sell-item`);
     const data = await res.json();
     setOffers(data);
   };

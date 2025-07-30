@@ -17,7 +17,7 @@ export default function AdminRefundsPage() {
   const [actionStatus, setActionStatus] = useState<string>("");
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/refunds/`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/refunds/`, {
       credentials: 'include',
     })
       .then(res => res.json())
@@ -34,7 +34,7 @@ export default function AdminRefundsPage() {
   const handleUpdate = async (auctionId: string, email: string, status: string) => {
     setActionStatus("");
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/refunds/${auctionId}/${encodeURIComponent(email)}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/refunds/${auctionId}/${encodeURIComponent(email)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
