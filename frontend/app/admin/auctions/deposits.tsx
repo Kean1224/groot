@@ -8,7 +8,7 @@ export default function AdminAuctionDepositsPage() {
   const [deposits, setDeposits] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("/api/auctions")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions`)
       .then((res) => res.json())
       .then(setAuctions);
   }, []);

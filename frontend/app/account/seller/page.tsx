@@ -28,7 +28,7 @@ export default function SellerInvoicesPage() {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       setUserEmail(payload.email);
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/invoices/seller/${encodeURIComponent(payload.email)}`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/invoices/seller/${encodeURIComponent(payload.email)}`)
         .then(res => res.json())
         .then(data => setSales(data));
     } catch {
@@ -47,7 +47,7 @@ export default function SellerInvoicesPage() {
     const auctionId = sales[0]?.auctionTitle || sales[0]?.auctionId;
     if (!auctionId) return setStatus('No auction ID found.');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invoices/email-invoices/${encodeURIComponent(auctionId)}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/invoices/email-invoices/${encodeURIComponent(auctionId)}`, {
         method: 'POST',
       });
       const data = await res.json();

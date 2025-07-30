@@ -80,19 +80,42 @@ export default function AdminUsersPage() {
     setAuctions(data);
   };
 
+  // Helper to get admin auth headers
+  const getAdminHeaders = () => {
+    const token = localStorage.getItem('admin_jwt');
+    console.log('Admin token:', token ? 'Found' : 'Not found');
+    return {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    };
+  };
+
   const toggleSuspend = async (email: string, suspended?: boolean) => {
-  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/suspend/${encodeURIComponent(email)}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ suspended: !suspended }),
-  });
-  await fetchUsers();
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/suspend/${encodeURIComponent(email)}`, {
+        method: 'PUT',
+        headers: getAdminHeaders(),
+        body: JSON.stringify({ suspended: !suspended }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to toggle suspend:', errorData);
+        alert(`Failed to ${suspended ? 'unsuspend' : 'suspend'} user: ${errorData.error || 'Unknown error'}`);
+        return;
+      }
+      
+      await fetchUsers();
+    } catch (error) {
+      console.error('Error toggling suspend:', error);
+      alert('Network error occurred');
+    }
   };
 
   const approveFica = async (email: string) => {
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/fica/${encodeURIComponent(email)}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAdminHeaders(),
     });
     fetchUsers();
   };
@@ -102,7 +125,7 @@ export default function AdminUsersPage() {
     setDepositActionLoading(email + auctionId + status);
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/deposits/return`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAdminHeaders(),
       body: JSON.stringify({ email, auctionId, status }),
     });
     setDepositActionLoading('');
@@ -114,7 +137,7 @@ export default function AdminUsersPage() {
     setDepositActionLoading(email + auctionId + 'approve');
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/deposits/${auctionId}/${encodeURIComponent(email)}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAdminHeaders(),
       body: JSON.stringify({ status: 'approved' }),
     });
     setDepositActionLoading('');
@@ -124,10 +147,25 @@ export default function AdminUsersPage() {
   // Delete user handler
   const deleteUser = async (email: string) => {
     if (!window.confirm('Are you sure you want to delete this user? This cannot be undone.')) return;
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${encodeURIComponent(email)}`, {
-      method: 'DELETE',
-    });
-    fetchUsers();
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${encodeURIComponent(email)}`, {
+        method: 'DELETE',
+        headers: getAdminHeaders(),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to delete user:', errorData);
+        alert(`Failed to delete user: ${errorData.error || 'Unknown error'}`);
+        return;
+      }
+      
+      fetchUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Network error occurred');
+    }
   };
 
   return (

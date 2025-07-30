@@ -18,9 +18,18 @@ export default function AdminAuctionsPage() {
 
   // Fetch auctions
   const fetchAuctions = async () => {
-    const res = await fetch('/api/auctions');
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions`);
     const data = await res.json();
     setAuctions(data);
+  };
+
+  // Helper to get admin auth headers
+  const getAdminHeaders = () => {
+    const token = localStorage.getItem('admin_jwt');
+    return {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    };
   };
 
   useEffect(() => {
@@ -29,19 +38,49 @@ export default function AdminAuctionsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch('/api/auctions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    });
-    setForm({ title: '', location: '', startTime: '', endTime: '', increment: 1, depositRequired: false, depositAmount: 0 });
-    fetchAuctions();
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions`, {
+        method: 'POST',
+        headers: getAdminHeaders(),
+        body: JSON.stringify(form),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to create auction:', errorData);
+        alert(`Failed to create auction: ${errorData.error || 'Unknown error'}`);
+        return;
+      }
+      
+      setForm({ title: '', location: '', startTime: '', endTime: '', increment: 1, depositRequired: false, depositAmount: 0 });
+      fetchAuctions();
+    } catch (error) {
+      console.error('Error creating auction:', error);
+      alert('Network error occurred');
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this auction?')) return;
-    await fetch(`/api/auctions/${id}`, { method: 'DELETE' });
-    fetchAuctions();
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions/${id}`, { 
+        method: 'DELETE',
+        headers: getAdminHeaders()
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to delete auction:', errorData);
+        alert(`Failed to delete auction: ${errorData.error || 'Unknown error'}`);
+        return;
+      }
+      
+      fetchAuctions();
+    } catch (error) {
+      console.error('Error deleting auction:', error);
+      alert('Network error occurred');
+    }
   };
 
   return (

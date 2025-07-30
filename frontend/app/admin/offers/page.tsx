@@ -31,7 +31,7 @@ export default function AdminOffersPage() {
   };
 
   const handleRespond = async (id: string) => {
-    const res = await fetch(`/api/sell-item/${id}`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sell-item/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ response: responseText[id] })

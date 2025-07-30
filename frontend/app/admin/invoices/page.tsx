@@ -29,7 +29,7 @@ function AdminInvoicesPage() {
 
   const fetchInvoices = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invoices`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/invoices`);
       const data = await res.json();
       // For demo, add paid:false if missing
       const withPaid = data.map((inv: Invoice) => ({ ...inv, paid: inv.paid ?? false }));
@@ -115,7 +115,7 @@ function AdminInvoicesPage() {
                             if (!inv.paid) {
                               // Mark as paid in backend
                               try {
-                                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invoices/${inv.id}/paid`, {
+                                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/invoices/${inv.id}/paid`, {
                                   method: 'PUT',
                                   headers: { 'Content-Type': 'application/json' },
                                 });
@@ -177,7 +177,7 @@ function AdminInvoicesPage() {
                     onClick={async () => {
                       if (!selectedInvoice.paid) {
                         try {
-                          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/invoices/${selectedInvoice.id}/paid`, {
+                          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/invoices/${selectedInvoice.id}/paid`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                           });

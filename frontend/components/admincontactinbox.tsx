@@ -5,7 +5,7 @@ export default function AdminContactInbox() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/contact/inbox')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/contact/inbox`)
       .then(res => res.json())
       .then(data => setMessages(data || []))
       .finally(() => setLoading(false));
