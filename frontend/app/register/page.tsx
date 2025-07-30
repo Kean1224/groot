@@ -44,7 +44,7 @@ export default function RegisterPage() {
       formData.append('password', password);
       formData.append('proofOfAddress', proofOfAddress);
       formData.append('idCopy', idCopy);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
         method: 'POST',
         body: formData,
       });

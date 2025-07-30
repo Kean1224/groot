@@ -47,7 +47,7 @@ export default function Header() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    fetch('/api/auth/session', { credentials: 'include' })
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/session`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => setIsAdmin(!!data.isAdmin));
   }, []);
