@@ -1,14 +1,22 @@
-# Custom Domain Setup Guide: www.all4youauctions.co.za
+# Custom Domain Setup Guide: all4youauctions.co.za
 
 ## 🌐 Complete Setup Instructions
 
 ### Step 1: Render Dashboard Configuration
-1. **Go to Render Dashboard** → Your Frontend Service
-2. **Settings** → **Custom Domains**
-3. **Add these domains:**
-   - `www.all4youauctions.co.za`
+**For Frontend Service:**
+1. Go to Render Dashboard → Your Frontend Service
+2. Settings → Custom Domains
+3. Add these domains:
    - `all4youauctions.co.za`
-4. **Copy the CNAME target** (e.g., `your-app.onrender.com`)
+   - `www.all4youauctions.co.za`
+4. Copy the CNAME target (e.g., `your-frontend-app.onrender.com`)
+
+**For Backend Service:**
+1. Go to Render Dashboard → Your Backend Service
+2. Settings → Custom Domains  
+3. Add this domain:
+   - `all4youauctions.co.za` (same domain, different service)
+4. Copy the CNAME target (e.g., `your-backend-app.onrender.com`)
 
 ### Step 2: Cloudflare DNS Configuration
 **Log into Cloudflare → all4youauctions.co.za → DNS Records**
@@ -16,26 +24,36 @@
 Add these DNS records:
 ```
 Type: CNAME
-Name: www
-Target: [your-render-app].onrender.com
+Name: @
+Target: [your-frontend-app].onrender.com
 Proxy: ✅ Proxied (Orange Cloud)
 
 Type: CNAME
-Name: @
-Target: [your-render-app].onrender.com  
+Name: www
+Target: [your-frontend-app].onrender.com
+Proxy: ✅ Proxied (Orange Cloud)
+
+Type: CNAME
+Name: api
+Target: [your-backend-app].onrender.com
 Proxy: ✅ Proxied (Orange Cloud)
 ```
 
 ### Step 3: Render Environment Variables
-**In Render Dashboard → Your Service → Environment**
-
-Add these environment variables:
+**Frontend Service Environment:**
 ```
-NEXT_PUBLIC_API_URL=https://www.all4youauctions.co.za/api
-NEXT_PUBLIC_BACKEND_URL=https://www.all4youauctions.co.za
-NEXT_PUBLIC_WS_URL=wss://www.all4youauctions.co.za
-NEXT_PUBLIC_BASE_URL=https://www.all4youauctions.co.za
+NEXT_PUBLIC_API_URL=https://all4youauctions.co.za/api
+NEXT_PUBLIC_BACKEND_URL=https://all4youauctions.co.za
+NEXT_PUBLIC_WS_URL=wss://all4youauctions.co.za
+NEXT_PUBLIC_BASE_URL=https://all4youauctions.co.za
 NODE_ENV=production
+```
+
+**Backend Service Environment:**
+```
+FRONTEND_URL=https://all4youauctions.co.za
+NODE_ENV=production
+JWT_SECRET=your-production-secret
 ```
 
 ### Step 4: SSL Certificate

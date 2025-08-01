@@ -1,4 +1,4 @@
-// CORS configuration for Render deployment
+// CORS configuration for custom domain
 const cors = require('cors');
 
 module.exports = cors({
@@ -8,7 +8,9 @@ module.exports = cors({
     'https://groot-cvb5.onrender.com',
     'https://groot-1.onrender.com',
     'https://groot-2.onrender.com',
-    'https://groot-frontend.onrender.com'
+    'https://groot-frontend.onrender.com',
+    'https://all4youauctions.co.za',
+    'https://www.all4youauctions.co.za'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
