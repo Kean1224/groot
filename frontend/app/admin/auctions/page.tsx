@@ -16,10 +16,36 @@ export default function AdminAuctionsPage() {
   });
 
   // Fetch auctions
+  // Helper function to check if auction is completed
+  const isAuctionCompleted = (auction: any): boolean => {
+    if (!auction.lots || auction.lots.length === 0) {
+      return false; // No lots means auction is not completed
+    }
+    return auction.lots.every((lot: any) => lot.status === 'ended');
+  };
+
   const fetchAuctions = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions`);
-    const data = await res.json();
-    setAuctions(data);
+    try {
+      // For admin, we want to see ALL auctions (including completed ones)
+      // So we'll call both endpoints and merge them
+      const [activeResponse, pastResponse] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions`),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions/past`)
+      ]);
+      
+      if (activeResponse.ok && pastResponse.ok) {
+        const activeAuctions = await activeResponse.json();
+        const pastAuctions = await pastResponse.json();
+        // Combine and sort by creation date (newest first)
+        const allAuctions = [...activeAuctions, ...pastAuctions];
+        allAuctions.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        setAuctions(allAuctions);
+      } else {
+        console.error('Failed to fetch auctions');
+      }
+    } catch (error) {
+      console.error('Error fetching auctions:', error);
+    }
   };
 
   // Helper to get admin auth headers
@@ -180,11 +206,26 @@ export default function AdminAuctionsPage() {
                   <li key={auction.id} className="border-b pb-4">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                       <div>
-                        <h3 className="text-lg font-semibold">{auction.title}</h3>
+                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                          {auction.title}
+                          {isAuctionCompleted(auction) && (
+                            <span className="bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs font-bold">
+                              ✅ COMPLETED
+                            </span>
+                          )}
+                        </h3>
                         <p className="text-sm text-gray-600">Location: {auction.location}</p>
                         <p className="text-sm text-gray-600">From: {new Date(auction.startTime).toLocaleString()}</p>
                         <p className="text-sm text-gray-600">To: {new Date(auction.endTime).toLocaleString()}</p>
                         <p className="text-sm text-gray-600">Increment: R{auction.increment}</p>
+                        <p className="text-sm text-gray-600">
+                          <span className="font-semibold">Lots:</span> {auction.lots?.length || 0} 
+                          {auction.lots?.length > 0 && (
+                            <span className="ml-2">
+                              ({auction.lots.filter((lot: any) => lot.status === 'ended').length} ended)
+                            </span>
+                          )}
+                        </p>
                         {auction.depositRequired && (
                           <p className="text-sm text-red-600 font-semibold">Deposit Required: R{auction.depositAmount}</p>
                         )}

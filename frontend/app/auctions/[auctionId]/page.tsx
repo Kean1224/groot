@@ -1415,7 +1415,21 @@ export default function AuctionDetailPage() {
                         {/* Bidding Status */}
                         {userEmail && (
                           <div className="mt-1">
-                            {isHighestBidder ? (
+                            {/* Check if lot has ended and user won */}
+                            {lot.status === 'ended' && isHighestBidder ? (
+                              <span className="text-green-600 font-bold text-lg bg-green-100 px-3 py-2 rounded-lg border-2 border-green-300 shadow-md flex items-center justify-center gap-2">
+                                🎉 YOU WON! 🏆
+                              </span>
+                            ) : lot.status === 'ended' && lot.bidHistory && lot.bidHistory.length > 0 && 
+                                   lot.bidHistory.some(bid => bid.bidderEmail === userEmail) ? (
+                              <span className="text-gray-600 font-bold text-sm bg-gray-100 px-2 py-1 rounded">
+                                🔚 Auction ended - You did not win
+                              </span>
+                            ) : lot.status === 'ended' ? (
+                              <span className="text-gray-600 font-bold text-sm bg-gray-100 px-2 py-1 rounded">
+                                🔚 Auction ended
+                              </span>
+                            ) : isHighestBidder ? (
                               <span className="text-green-600 font-bold text-sm bg-green-100 px-2 py-1 rounded">
                                 🏆 You are the highest bidder!
                               </span>
@@ -1442,39 +1456,41 @@ export default function AuctionDetailPage() {
                         )}
                       </div>
 
-                      {/* Auto-bid Section */}
-                      <div className="w-full mb-4 p-3 bg-gray-50 rounded-lg">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Set Maximum Auto-bid
-                        </label>
-                        <div className="flex gap-2">
-                          <input
-                            type="number"
-                            placeholder={`Min: R${lot.currentBid + (lot.bidIncrement || 10)}`}
-                            value={autoBidInputs[lot.id] || ''}
-                            onChange={(e) => setAutoBidInputs(prev => ({ ...prev, [lot.id]: e.target.value }))}
-                            className="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-purple-200"
-                            min={lot.currentBid + (lot.bidIncrement || 10)}
-                            step={lot.bidIncrement || 10}
-                          />
-                          <button
-                            onClick={() => handleSetAutoBid(lot.id)}
-                            disabled={autoBidLoading[lot.id] || !userEmail}
-                            className="bg-purple-500 hover:bg-purple-600 text-white font-bold px-4 py-2 rounded-lg shadow transition-all duration-150 disabled:opacity-50 text-sm"
-                          >
-                            {autoBidLoading[lot.id] ? '...' : 'Set'}
-                          </button>
+                      {/* Auto-bid Section - Only show for active lots */}
+                      {lot.status !== 'ended' && (
+                        <div className="w-full mb-4 p-3 bg-gray-50 rounded-lg">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Set Maximum Auto-bid
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="number"
+                              placeholder={`Min: R${lot.currentBid + (lot.bidIncrement || 10)}`}
+                              value={autoBidInputs[lot.id] || ''}
+                              onChange={(e) => setAutoBidInputs(prev => ({ ...prev, [lot.id]: e.target.value }))}
+                              className="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-purple-200"
+                              min={lot.currentBid + (lot.bidIncrement || 10)}
+                              step={lot.bidIncrement || 10}
+                            />
+                            <button
+                              onClick={() => handleSetAutoBid(lot.id)}
+                              disabled={autoBidLoading[lot.id] || !userEmail}
+                              className="bg-purple-500 hover:bg-purple-600 text-white font-bold px-4 py-2 rounded-lg shadow transition-all duration-150 disabled:opacity-50 text-sm"
+                            >
+                              {autoBidLoading[lot.id] ? '...' : 'Set'}
+                            </button>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {isHighestBidder ? 
+                              "Auto-bid will activate when others bid against you" : 
+                              "System will bid automatically up to your max amount when others bid against you"
+                            }
+                          </p>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {isHighestBidder ? 
-                            "Auto-bid will activate when others bid against you" : 
-                            "System will bid automatically up to your max amount when others bid against you"
-                          }
-                        </p>
-                      </div>
+                      )}
 
-                      {/* Quick Bid Buttons */}
-                      {userEmail && (
+                      {/* Quick Bid Buttons - Only for active lots */}
+                      {userEmail && lot.status !== 'ended' && (
                         <div className="mb-4">
                           <QuickBidButtons
                             currentBid={lot.currentBid}
@@ -1486,48 +1502,62 @@ export default function AuctionDetailPage() {
                         </div>
                       )}
 
-                      {/* Bidding Buttons */}
-                      {auction?.depositRequired ? (
-                        depositStatus === 'approved' ? (
-                          <div className="flex gap-2 w-full">
-                            <button
-                              className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-bold px-4 py-2 rounded-lg shadow transition-all duration-150 disabled:opacity-50"
-                              onClick={() => handlePlaceBid(lot.id, lot.currentBid, lot.bidIncrement || 10)}
-                              disabled={biddingLoading === lot.id}
-                            >
-                              {biddingLoading === lot.id ? 'Placing Bid...' : 
-                               `Bid R${lot.currentBid + (lot.bidIncrement || 10)}`}
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-red-500 font-semibold">
-                            You must pay and have your deposit approved to bid.
-                          </span>
-                        )
+                      {/* Bidding Buttons - Only for active lots */}
+                      {lot.status !== 'ended' ? (
+                        <>
+                          {auction?.depositRequired ? (
+                            depositStatus === 'approved' ? (
+                              <div className="flex gap-2 w-full">
+                                <button
+                                  className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-bold px-4 py-2 rounded-lg shadow transition-all duration-150 disabled:opacity-50"
+                                  onClick={() => handlePlaceBid(lot.id, lot.currentBid, lot.bidIncrement || 10)}
+                                  disabled={biddingLoading === lot.id}
+                                >
+                                  {biddingLoading === lot.id ? 'Placing Bid...' : 
+                                   `Bid R${lot.currentBid + (lot.bidIncrement || 10)}`}
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-red-500 font-semibold">
+                                You must pay and have your deposit approved to bid.
+                              </span>
+                            )
+                          ) : (
+                            <div className="flex flex-col items-center gap-1 w-full">
+                              <span className="text-xs text-blue-600 font-semibold">FICA required to bid.</span>
+                              {ficaStatus === 'not_uploaded' && (
+                                <>
+                                  <input type="file" accept="image/*,.pdf" onChange={handleFicaUpload} disabled={ficaLoading} className="text-xs" />
+                                  <span className="text-xs text-gray-500">Upload ID/Proof of Address</span>
+                                </>
+                              )}
+                              {ficaStatus === 'pending' && (
+                                <span className="text-xs text-yellow-600">FICA pending admin approval.</span>
+                              )}
+                              {ficaStatus === 'approved' && (
+                                <button
+                                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold px-4 py-2 rounded-lg shadow transition-all duration-150 disabled:opacity-50"
+                                  onClick={() => handlePlaceBid(lot.id, lot.currentBid, lot.bidIncrement || 10)}
+                                  disabled={biddingLoading === lot.id}
+                                >
+                                  {biddingLoading === lot.id ? 'Placing Bid...' : 
+                                   `Bid R${lot.currentBid + (lot.bidIncrement || 10)}`}
+                                </button>
+                              )}
+                              {ficaStatus === 'rejected' && (
+                                <span className="text-xs text-red-600">FICA rejected. Please re-upload.</span>
+                              )}
+                            </div>
+                          )}
+                        </>
                       ) : (
-                        <div className="flex flex-col items-center gap-1 w-full">
-                          <span className="text-xs text-blue-600 font-semibold">FICA required to bid.</span>
-                          {ficaStatus === 'not_uploaded' && (
-                            <>
-                              <input type="file" accept="image/*,.pdf" onChange={handleFicaUpload} disabled={ficaLoading} className="text-xs" />
-                              <span className="text-xs text-gray-500">Upload ID/Proof of Address</span>
-                            </>
-                          )}
-                          {ficaStatus === 'pending' && (
-                            <span className="text-xs text-yellow-600">FICA pending admin approval.</span>
-                          )}
-                          {ficaStatus === 'approved' && (
-                            <button
-                              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold px-4 py-2 rounded-lg shadow transition-all duration-150 disabled:opacity-50"
-                              onClick={() => handlePlaceBid(lot.id, lot.currentBid, lot.bidIncrement || 10)}
-                              disabled={biddingLoading === lot.id}
-                            >
-                              {biddingLoading === lot.id ? 'Placing Bid...' : 
-                               `Bid R${lot.currentBid + (lot.bidIncrement || 10)}`}
-                            </button>
-                          )}
-                          {ficaStatus === 'rejected' && (
-                            <span className="text-xs text-red-600">FICA rejected. Please re-upload.</span>
+                        /* Lot Ended Message */
+                        <div className="text-center p-4 bg-gray-100 rounded-lg">
+                          <p className="text-gray-600 font-semibold">🔚 This lot has ended</p>
+                          {lot.bidHistory && lot.bidHistory.length > 0 && (
+                            <p className="text-sm text-gray-500 mt-1">
+                              Final bid: R{lot.currentBid.toLocaleString()}
+                            </p>
                           )}
                         </div>
                       )}

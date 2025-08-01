@@ -59,6 +59,16 @@ export default function AuctionsPage() {
         {/* Navigation Helper */}
         <NavigationHelper userEmail={userEmail} />
 
+        {/* Past Auctions Link */}
+        <div className="text-center mb-8">
+          <Link 
+            href="/auctions/past" 
+            className="inline-block bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+          >
+            📜 View Past Auctions
+          </Link>
+        </div>
+
         {loading ? (
         <p className="text-center text-gray-500">Loading auctions...</p>
       ) : auctions.length === 0 ? (

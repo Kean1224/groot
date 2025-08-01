@@ -144,6 +144,9 @@ export default function Header() {
                 <Link href="/auctions" className={`${isActive('/auctions')} px-3 py-2 rounded-full transition-all duration-200 hover:bg-white/20 hover:backdrop-blur-sm`}>
                   🏛️ Auctions
                 </Link>
+                <Link href="/auctions/past" className={`${isActive('/auctions/past')} px-3 py-2 rounded-full transition-all duration-200 hover:bg-white/20 hover:backdrop-blur-sm`}>
+                  📜 Past Auctions
+                </Link>
                 <Link href="/watchlist" className={`${isActive('/watchlist')} px-3 py-2 rounded-full transition-all duration-200 hover:bg-white/20 hover:backdrop-blur-sm`}>
                   ❤️ Watchlist
                 </Link>
@@ -249,6 +252,9 @@ export default function Header() {
                 <>
                   <Link href="/auctions" className={`${isActive('/auctions')} py-3 px-4 rounded-xl hover:bg-white/20 transition-all duration-200 flex items-center gap-3`} onClick={() => setMenuOpen(false)}>
                     🏛️ <span>Auctions</span>
+                  </Link>
+                  <Link href="/auctions/past" className={`${isActive('/auctions/past')} py-3 px-4 rounded-xl hover:bg-white/20 transition-all duration-200 flex items-center gap-3`} onClick={() => setMenuOpen(false)}>
+                    📜 <span>Past Auctions</span>
                   </Link>
                   <Link href="/watchlist" className={`${isActive('/watchlist')} py-3 px-4 rounded-xl hover:bg-white/20 transition-all duration-200 flex items-center gap-3`} onClick={() => setMenuOpen(false)}>
                     ❤️ <span>Watchlist</span>

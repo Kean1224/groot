@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface QuickBidButtonsProps {
   currentBid: number;
@@ -17,7 +17,9 @@ export default function QuickBidButtons({
   disabled = false,
   loading = false 
 }: QuickBidButtonsProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Generate quick bid amounts
   const quickBidAmounts = [
@@ -27,6 +29,20 @@ export default function QuickBidButtons({
     currentBid + increment * 10
   ];
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const handleQuickBid = (amount: number) => {
     // Haptic feedback (if supported)
     if ('vibrate' in navigator) {
@@ -35,6 +51,7 @@ export default function QuickBidButtons({
     
     setSelectedAmount(amount);
     onQuickBid(amount);
+    setIsOpen(false); // Close dropdown after selection
     
     // Clear selection after animation
     setTimeout(() => setSelectedAmount(null), 1000);
@@ -48,53 +65,86 @@ export default function QuickBidButtons({
     }).format(amount);
   };
 
-  return (
-    <div className="bg-gradient-to-r from-yellow-50 to-blue-50 rounded-xl p-4 border border-yellow-200">
-      <h4 className="text-sm font-bold text-gray-700 mb-3 text-center">⚡ Quick Bid</h4>
-      <div className="grid grid-cols-2 gap-2">
-        {quickBidAmounts.map((amount, index) => {
-          const isSelected = selectedAmount === amount;
-          const buttonClass = `
-            relative overflow-hidden transform transition-all duration-200 
-            ${disabled || loading ? 
-              'bg-gray-200 text-gray-400 cursor-not-allowed' : 
-              'bg-white hover:bg-gradient-to-r hover:from-yellow-400 hover:to-yellow-500 hover:text-white hover:shadow-lg hover:scale-105 active:scale-95 cursor-pointer'
-            }
-            ${isSelected ? 'bg-gradient-to-r from-green-400 to-green-500 text-white scale-105 shadow-lg' : ''}
-            text-sm font-bold py-2 px-3 rounded-lg border-2 border-yellow-200 text-center
-          `;
+  const toggleDropdown = () => {
+    if (!disabled && !loading) {
+      setIsOpen(!isOpen);
+    }
+  };
 
-          return (
-            <button
-              key={index}
-              onClick={() => !disabled && !loading && handleQuickBid(amount)}
-              disabled={disabled || loading}
-              className={buttonClass}
-            >
-              {isSelected && (
-                <div className="absolute inset-0 bg-white opacity-20 animate-pulse rounded-lg"></div>
-              )}
-              <div className="relative z-10">
-                <div className="text-xs opacity-75">
-                  +R{amount - currentBid}
-                </div>
-                <div className="font-bold">
-                  {formatCurrency(amount).replace('ZAR', 'R')}
-                </div>
-              </div>
-              
-              {/* Ripple effect */}
-              {isSelected && (
-                <div className="absolute inset-0 bg-white rounded-lg animate-ping opacity-20"></div>
-              )}
-            </button>
-          );
-        })}
-      </div>
-      
-      <div className="mt-3 text-xs text-gray-500 text-center">
-        💡 Tap any amount to bid instantly
-      </div>
+  return (
+    <div className="relative" ref={dropdownRef}>
+      {/* Quick Bid Toggle Button */}
+      <button
+        onClick={toggleDropdown}
+        disabled={disabled || loading}
+        className={`
+          w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg border-2 transition-all duration-200
+          ${disabled || loading ? 
+            'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed' : 
+            'bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white border-yellow-300 hover:shadow-md cursor-pointer'
+          }
+          ${isOpen ? 'shadow-lg scale-105' : ''}
+        `}
+      >
+        <span className="text-sm font-bold">⚡ Quick Bid</span>
+        <svg 
+          className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-200 p-3 z-50 transform transition-all duration-200 ease-out animate-in">
+          <div className="text-xs text-gray-500 text-center mb-2 font-semibold">Select quick bid amount:</div>
+          <div className="grid grid-cols-2 gap-2">
+            {quickBidAmounts.map((amount, index) => {
+              const isSelected = selectedAmount === amount;
+              const buttonClass = `
+                relative overflow-hidden transform transition-all duration-150 
+                ${isSelected ? 
+                  'bg-gradient-to-r from-green-400 to-green-500 text-white scale-105 shadow-md' : 
+                  'bg-gray-50 hover:bg-gradient-to-r hover:from-yellow-400 hover:to-yellow-500 hover:text-white hover:shadow-md hover:scale-102 active:scale-95'
+                }
+                text-xs font-bold py-2 px-2 rounded-lg border border-gray-200 text-center cursor-pointer
+              `;
+
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleQuickBid(amount)}
+                  className={buttonClass}
+                >
+                  {isSelected && (
+                    <div className="absolute inset-0 bg-white opacity-20 animate-pulse rounded-lg"></div>
+                  )}
+                  <div className="relative z-10">
+                    <div className="text-xs opacity-75">
+                      +R{(amount - currentBid).toLocaleString()}
+                    </div>
+                    <div className="font-bold">
+                      R{amount.toLocaleString()}
+                    </div>
+                  </div>
+                  
+                  {/* Ripple effect */}
+                  {isSelected && (
+                    <div className="absolute inset-0 bg-white rounded-lg animate-ping opacity-20"></div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          
+          <div className="mt-2 text-xs text-gray-400 text-center">
+            💡 Tap to bid instantly
+          </div>
+        </div>
+      )}
     </div>
   );
 }
