@@ -1,41 +1,60 @@
 const express = require('express');
 const router = express.Router();
-const { sendMail } = require('../utils/mailer');
+const { sendEmail } = require('../utils/mailer');
 
 // Test email endpoint
-router.post('/test-email', async (req, res) => {
-  const { to } = req.body;
-  
-  if (!to) {
-    return res.status(400).json({ error: 'Email address required' });
-  }
-  
+router.post('/send-test', async (req, res) => {
   try {
-    console.log('Testing email to:', to);
+    const { to, subject, text } = req.body;
     
-    await sendMail({
-      to: to,
-      subject: 'Test Email - All4You Auctions',
-      text: 'This is a test email from All4You Auctions system.',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #d97706;">Test Email - All4You Auctions</h2>
-          <p>This is a test email from the All4You Auctions system.</p>
-          <p>If you receive this, the email configuration is working correctly!</p>
-          <p>Best regards,<br>All4You Auctions Team</p>
-        </div>
-      `
+    // Default values for testing
+    const testEmail = to || 'test@example.com';
+    const testSubject = subject || 'Email System Test';
+    const testText = text || 'This is a test email to verify the email system is working correctly.';
+    
+    console.log('Attempting to send test email to:', testEmail);
+    
+    await sendEmail(testEmail, testSubject, testText);
+    
+    res.json({ 
+      success: true, 
+      message: 'Test email sent successfully!',
+      details: {
+        to: testEmail,
+        subject: testSubject
+      }
     });
-    
-    res.json({ success: true, message: 'Test email sent successfully!' });
   } catch (error) {
     console.error('Test email failed:', error);
     res.status(500).json({ 
       success: false, 
-      error: 'Failed to send test email', 
-      details: error.message 
+      message: 'Failed to send test email',
+      error: error.message,
+      details: {
+        code: error.code,
+        command: error.command
+      }
     });
   }
+});
+
+// Get email configuration status
+router.get('/status', (req, res) => {
+  const config = {
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
+    user: process.env.SMTP_USER,
+    hasPassword: !!process.env.SMTP_PASS && process.env.SMTP_PASS !== 'your_16_character_app_password_here',
+    from: process.env.SMTP_FROM
+  };
+  
+  res.json({
+    configured: config.hasPassword && config.host && config.user,
+    settings: {
+      ...config,
+      password: config.hasPassword ? '***configured***' : 'NOT SET'
+    }
+  });
 });
 
 module.exports = router;
