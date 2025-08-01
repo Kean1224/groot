@@ -17,9 +17,17 @@ export default function ContactPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Create mailto link for admin email
+    const subject = `Contact Form: Message from ${formData.name}`;
+    const body = `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`;
+    const mailtoLink = `mailto:admin@all4youauctions.co.za?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    // Open email client
+    window.location.href = mailtoLink;
+
     // Simulate successful form submission
     setTimeout(() => {
-      setStatus('✅ Message sent successfully!');
+      setStatus('✅ Email client opened! Your message is ready to send.');
       setFormData({ name: '', email: '', message: '' });
     }, 1000);
   };
@@ -29,8 +37,12 @@ export default function ContactPage() {
       <h1 className="text-3xl font-bold text-yellow-700 mb-6">Contact Us</h1>
 
       <div className="mb-6">
-        <p className="text-lg text-gray-700 mb-1">📞 Phone: <strong>+27 82 123 4567</strong></p>
-        <p className="text-lg text-gray-700 mb-1">📧 Email: <strong>info@all4youauctions.co.za</strong></p>
+        <p className="text-lg text-gray-700 mb-1">📞 Phone: <strong>083 258 4755</strong></p>
+        <p className="text-lg text-gray-700 mb-1">📧 Email: 
+          <a href="mailto:admin@all4youauctions.co.za" className="text-blue-600 hover:underline ml-2">
+            <strong>admin@all4youauctions.co.za</strong>
+          </a>
+        </p>
         <p className="text-lg text-gray-700">📍 Location: Pretoria, South Africa</p>
       </div>
 

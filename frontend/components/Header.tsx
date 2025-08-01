@@ -269,7 +269,9 @@ export default function Header() {
                   <Link href="/my-auctions/invoices" className={`${isActive('/my-auctions/invoices')} py-3 px-4 rounded-xl hover:bg-white/20 transition-all duration-200 flex items-center gap-3`} onClick={() => setMenuOpen(false)}>
                     📊 <span>My Auctions</span>
                   </Link>
-                  <Link href="/sell" className={`${isActive('/sell')} py-3 px-4 bg-green-500/80 hover:bg-green-600 rounded-xl transition-all duration-200 hover:scale-105 font-bold shadow-md text-white flex items-center gap-3`} onClick={() => setMenuOpen(false)}>
+                  
+                  {/* Sell Item Button - Enhanced prominence */}
+                  <Link href="/sell" className={`${isActive('/sell')} py-3 px-4 bg-green-500/90 hover:bg-green-600 rounded-xl transition-all duration-200 hover:scale-105 font-bold shadow-lg text-white flex items-center gap-3 border-2 border-green-400`} onClick={() => setMenuOpen(false)}>
                     💎 <span>Sell Item</span>
                   </Link>
                 </>

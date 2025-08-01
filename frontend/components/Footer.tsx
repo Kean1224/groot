@@ -11,6 +11,16 @@ export default function Footer() {
           © {new Date().getFullYear()} <span className="font-semibold">All4You Auctioneers</span>. All rights reserved.
         </p>
 
+        {/* Contact Information */}
+        <div className="space-y-2 mb-4">
+          <p className="text-sm text-gray-300">
+            📧 <a href="mailto:admin@all4youauctions.co.za" className="hover:text-white transition underline">
+              admin@all4youauctions.co.za
+            </a>
+          </p>
+          <p className="text-sm text-gray-300">📞 083 258 4755</p>
+        </div>
+
         {/* Optional Quick Links */}
         <div className="flex justify-center gap-4 text-xs text-gray-400">
           <Link href="/terms" className="hover:text-white transition">Terms</Link>

@@ -14,7 +14,7 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configure multer
+// Configure multer with PDF support
 const storage = multer.diskStorage({
   destination: uploadDir,
   filename: (req, file, cb) => {
@@ -24,7 +24,24 @@ const storage = multer.diskStorage({
     cb(null, `${email}-${prefix}${ext}`);
   }
 });
-const upload = multer({ storage });
+
+// File filter to accept images and PDFs
+const fileFilter = (req, file, cb) => {
+  // Accept image files and PDFs
+  if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files and PDFs are allowed!'), false);
+  }
+};
+
+const upload = multer({ 
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
 
 // Helpers
 function readUsers() {
