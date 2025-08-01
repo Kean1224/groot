@@ -23,10 +23,26 @@ function writeAuctions(auctions) {
   fs.writeFileSync(dataPath, JSON.stringify(auctions, null, 2), 'utf-8');
 }
 
-// GET all auctions
+// Helper: Check if auction is completed (all lots have ended)
+function isAuctionCompleted(auction) {
+  if (!auction.lots || auction.lots.length === 0) {
+    return false; // No lots means auction is not completed
+  }
+  return auction.lots.every(lot => lot.status === 'ended');
+}
+
+// GET all active auctions (excludes completed ones)
 router.get('/', (req, res) => {
   const auctions = readAuctions();
-  res.json(auctions);
+  const activeAuctions = auctions.filter(auction => !isAuctionCompleted(auction));
+  res.json(activeAuctions);
+});
+
+// GET all past/completed auctions
+router.get('/past', (req, res) => {
+  const auctions = readAuctions();
+  const completedAuctions = auctions.filter(auction => isAuctionCompleted(auction));
+  res.json(completedAuctions);
 });
 
 // POST new auction (admin only)
