@@ -7,7 +7,7 @@ console.log('SMTP User:', process.env.SMTP_USER);
 console.log('SMTP From:', process.env.SMTP_FROM);
 console.log('SMTP Password Set:', !!process.env.SMTP_PASS);
 
-// Configure your SMTP transport with explicit Google Workspace settings
+// Configure your SMTP transport with enhanced Google Workspace settings
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT) || 587,
@@ -19,7 +19,11 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false
   },
-  debug: process.env.EMAIL_DEBUG === 'true'
+  connectionTimeout: 60000, // 60 seconds
+  greetingTimeout: 30000,   // 30 seconds
+  socketTimeout: 60000,     // 60 seconds
+  debug: process.env.EMAIL_DEBUG === 'true',
+  logger: process.env.EMAIL_DEBUG === 'true'
 });
 
 // Test the connection on startup
