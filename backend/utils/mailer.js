@@ -2,19 +2,24 @@ const nodemailer = require('nodemailer');
 
 console.log('🔧 Configuring Email Transporter...');
 console.log('SMTP Host:', process.env.SMTP_HOST);
+console.log('SMTP Port:', process.env.SMTP_PORT);
 console.log('SMTP User:', process.env.SMTP_USER);
+console.log('SMTP From:', process.env.SMTP_FROM);
 console.log('SMTP Password Set:', !!process.env.SMTP_PASS);
 
-// Configure your SMTP transport with enhanced Gmail settings
+// Configure your SMTP transport with explicit Google Workspace settings
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // Use Gmail service shortcut
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT) || 587,
+  secure: false, // true for 465, false for other ports
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
   tls: {
     rejectUnauthorized: false
-  }
+  },
+  debug: process.env.EMAIL_DEBUG === 'true'
 });
 
 // Test the connection on startup
