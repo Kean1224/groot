@@ -145,7 +145,6 @@ export default function AdminLotsPage() {
                 className="w-full border px-4 py-2 rounded mb-2"
               />
               <select
-                required
                 value={form.sellerEmail}
                 onChange={e => {
                   setForm({ ...form, sellerEmail: e.target.value });
@@ -160,7 +159,7 @@ export default function AdminLotsPage() {
                     u.email.toLowerCase().includes(form.sellerSearch.toLowerCase())
                   )
                   .map(u => (
-                    <option key={u.id} value={u.email}>
+                    <option key={u.email} value={u.email}>
                       {u.name} ({u.email})
                     </option>
                   ))}

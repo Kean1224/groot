@@ -12,19 +12,57 @@ export default function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    setLoading(false);
-    if (res.ok) {
-      // Optionally store token in cookie/localStorage if backend does not set cookie
-      router.push('/');
-      router.refresh();
-    } else {
+    
+    console.log('Login attempt:', { email, apiUrl: process.env.NEXT_PUBLIC_API_URL });
+    
+    try {
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`;
+      console.log('Making request to:', apiUrl);
+      
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password })
+      });
+      
+      console.log('Response status:', res.status);
+      console.log('Response headers:', Object.fromEntries(res.headers.entries()));
+      
       const data = await res.json();
-      setError(data.error || 'Login failed');
+      console.log('Response data:', data);
+      setLoading(false);
+      
+      if (res.ok) {
+        // Store the token in localStorage
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('userEmail', data.email);
+          localStorage.setItem('userRole', data.role);
+          console.log('Login successful, token stored:', data.token);
+        }
+        
+        // Redirect based on role
+        if (data.role === 'admin') {
+          router.push('/admin');
+        } else {
+          router.push('/');
+        }
+        router.refresh();
+      } else {
+        setError(data.error || 'Login failed');
+      }
+    } catch (error) {
+      setLoading(false);
+      console.error('Login error details:', error);
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        setError('Unable to connect to server. Please check if the backend is running.');
+      } else {
+        setError(`Network error occurred: ${error.message}`);
+      }
     }
   };
 

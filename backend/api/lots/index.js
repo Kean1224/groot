@@ -136,7 +136,36 @@ router.get('/:auctionId', (req, res) => {
 
   if (!auction) return res.status(404).json({ error: 'Auction not found' });
 
-  res.json(auction.lots || []);
+  let lots = auction.lots || [];
+  
+  // Add staggered end times if they don't exist
+  const now = new Date();
+  let hasChanges = false;
+  
+  lots = lots.map((lot, index) => {
+    if (!lot.endTime) {
+      // Create staggered end times: first lot ends in 5 minutes, each subsequent lot 1 minute later
+      const endTime = new Date(now.getTime() + (5 + index) * 60 * 1000);
+      lot.endTime = endTime.toISOString();
+      hasChanges = true;
+    }
+    
+    // Ensure lot has a lotNumber
+    if (!lot.lotNumber) {
+      lot.lotNumber = index + 1;
+      hasChanges = true;
+    }
+    
+    return lot;
+  });
+  
+  // Save changes if any were made
+  if (hasChanges) {
+    auction.lots = lots;
+    writeAuctions(auctions);
+  }
+
+  res.json({ lots });
 });
 
 // ✅ POST: Add a new lot to an auction
@@ -157,6 +186,16 @@ router.post('/:auctionId', upload.single('image'), (req, res) => {
       maxLotNumber = lot.lotNumber;
     }
   });
+  
+  // Create staggered end time if not provided
+  let lotEndTime = endTime;
+  if (!lotEndTime) {
+    const now = new Date();
+    // First lot ends in 5 minutes, each subsequent lot 1 minute later
+    const minutesToAdd = 5 + maxLotNumber; // maxLotNumber is the current count before adding new lot
+    lotEndTime = new Date(now.getTime() + minutesToAdd * 60 * 1000).toISOString();
+  }
+  
   const newLot = {
     id: uuidv4(),
     title,
@@ -166,7 +205,7 @@ router.post('/:auctionId', upload.single('image'), (req, res) => {
     currentBid: parseFloat(startPrice),
     bidIncrement: parseFloat(bidIncrement) || 10,
     bidHistory: [],
-    endTime: endTime || null,
+    endTime: lotEndTime,
     createdAt: new Date().toISOString(),
     sellerEmail: sellerEmail || null,
     lotNumber: maxLotNumber + 1,
@@ -228,7 +267,20 @@ router.put('/:auctionId/:lotId/autobid', authenticateToken, (req, res) => {
   lot.autoBids = lot.autoBids.filter(b => b.bidderEmail !== bidderEmail);
   lot.autoBids.push({ bidderEmail, maxBid });
   writeAuctions(auctions);
-  res.json({ message: 'Auto-bid set', autoBids: lot.autoBids });
+  res.json({ message: 'Auto-bid set', maxBid });
+});
+
+// ✅ NEW: Get auto-bid status for a user on a lot (protected)
+router.get('/:auctionId/:lotId/autobid/:userEmail', authenticateToken, (req, res) => {
+  const { auctionId, lotId, userEmail } = req.params;
+  const auctions = readAuctions();
+  const auction = auctions.find(a => a.id === auctionId);
+  if (!auction) return res.status(404).json({ error: 'Auction not found' });
+  const lot = auction.lots.find(l => l.id === lotId);
+  if (!lot) return res.status(404).json({ error: 'Lot not found' });
+  
+  const autoBid = lot.autoBids?.find(b => b.bidderEmail === userEmail);
+  res.json({ maxBid: autoBid?.maxBid || null });
 });
 
 // ✅ Place a bid using increment, and process auto-bids (protected)
@@ -243,10 +295,15 @@ router.put('/:auctionId/:lotId/bid', authenticateToken, async (req, res) => {
   const lot = auction.lots.find(l => l.id === lotId);
   if (!lot) return res.status(404).json({ error: 'Lot not found' });
 
+  // Check if user is trying to bid against themselves
+  let previousBidder = lot.bidHistory && lot.bidHistory.length > 0 ? lot.bidHistory[lot.bidHistory.length - 1].bidderEmail : null;
+  if (previousBidder === bidderEmail) {
+    return res.status(400).json({ error: 'You are already the highest bidder' });
+  }
+
   const increment = lot.bidIncrement || 10;
   let newBid = lot.currentBid + increment;
   let lastBidder = bidderEmail || 'unknown';
-  let previousBidder = lot.bidHistory && lot.bidHistory.length > 0 ? lot.bidHistory[lot.bidHistory.length - 1].bidderEmail : null;
 
   lot.currentBid = newBid;
   lot.bidHistory = lot.bidHistory || [];
@@ -273,33 +330,57 @@ router.put('/:auctionId/:lotId/bid', authenticateToken, async (req, res) => {
   let autobidTriggered = true;
   while (autobidTriggered) {
     autobidTriggered = false;
-    // Find all auto-bidders who can outbid current
-    const eligible = lot.autoBids.filter(b => b.maxBid >= lot.currentBid + increment && b.bidderEmail !== lastBidder);
+    // Find all auto-bidders who can outbid current and are not the current highest bidder
+    const eligible = lot.autoBids.filter(b => 
+      b.maxBid >= lot.currentBid + increment && 
+      b.bidderEmail !== lastBidder
+    );
+    
     if (eligible.length > 0) {
-      // Highest maxBid wins
-      if (wsNotify) wsNotify(previousBidder, { message: `You've been outbid on lot ${lot.title}!` });
+      // Sort by max bid (highest first), then by when auto-bid was set
       eligible.sort((a, b) => b.maxBid - a.maxBid);
       const winner = eligible[0];
-      newBid = lot.currentBid + increment;
-      lot.currentBid = newBid;
-      lot.bidHistory.push({
-        bidderEmail: winner.bidderEmail,
-        amount: newBid,
-        time: new Date().toISOString()
-      });
-      // Notify previous bidder if outbid
-      if (lastBidder && lastBidder !== winner.bidderEmail) {
-        try {
-          await sendMail({
-            to: lastBidder,
-            subject: 'You have been outbid',
-            text: `You have been outbid on lot ${lot.title} in auction ${auctionId}. Place a new bid to stay in the lead!`,
-            html: `<p>You have been <b>outbid</b> on lot <b>${lot.title}</b> in auction <b>${auctionId}</b>.<br>Place a new bid to stay in the lead!</p>`
-          });
-        } catch (e) { console.error('Failed to send outbid email:', e); }
+      
+      // Calculate new bid - only increment by the minimum needed
+      newBid = Math.min(winner.maxBid, lot.currentBid + increment);
+      
+      // Only proceed if the auto-bidder's max is high enough
+      if (newBid <= winner.maxBid) {
+        // Notify previous bidder if outbid
+        if (lastBidder && lastBidder !== winner.bidderEmail) {
+          if (wsNotify) wsNotify(lastBidder, { message: `You've been outbid on lot ${lot.title}!` });
+          try {
+            await sendMail({
+              to: lastBidder,
+              subject: 'You have been outbid',
+              text: `You have been outbid on lot ${lot.title} in auction ${auctionId}. Place a new bid to stay in the lead!`,
+              html: `<p>You have been <b>outbid</b> on lot <b>${lot.title}</b> in auction <b>${auctionId}</b>.<br>Place a new bid to stay in the lead!</p>`
+            });
+          } catch (e) { console.error('Failed to send outbid email:', e); }
+        }
+        
+        lot.currentBid = newBid;
+        lot.bidHistory.push({
+          bidderEmail: winner.bidderEmail,
+          amount: newBid,
+          time: new Date().toISOString(),
+          isAutoBid: true
+        });
+        
+        lastBidder = winner.bidderEmail;
+        
+        // If we reached the auto-bidder's max, remove their auto-bid
+        if (newBid >= winner.maxBid) {
+          lot.autoBids = lot.autoBids.filter(b => b.bidderEmail !== winner.bidderEmail);
+        }
+        
+        // Continue if there are more eligible auto-bidders
+        const stillEligible = lot.autoBids.filter(b => 
+          b.maxBid >= lot.currentBid + increment && 
+          b.bidderEmail !== lastBidder
+        );
+        autobidTriggered = stillEligible.length > 0;
       }
-      lastBidder = winner.bidderEmail;
-      autobidTriggered = true;
     }
   }
 

@@ -14,19 +14,31 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setError('');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/admin-login`, {
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/admin-login`;
+      console.log('Attempting admin login to:', apiUrl);
+      console.log('Credentials:', { email, password: password ? '***' : 'empty' });
+      
+      const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
+      
+      console.log('Response status:', res.status);
       const data = await res.json();
+      console.log('Response data:', data);
+      
       if (res.ok && data.token) {
         localStorage.setItem('admin_jwt', data.token);
+        localStorage.setItem('userEmail', data.email);
+        localStorage.setItem('userRole', 'admin');
+        console.log('Admin login successful, token stored');
         router.push('/admin/dashboard');
       } else {
         setError(data.error || 'Login failed');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('Network error');
     }
   };

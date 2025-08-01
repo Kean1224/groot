@@ -1,10 +1,10 @@
 [
   {
     "email": "demo@example.com",
-    "password": "demo123",
+    "password": "$2b$10$oS8v6liSmTAZghHifljwbOd66LCgQA37MtBRk.LbPeROeSQgqrBF6",
     "name": "Demo User",
     "ficaApproved": true,
-    "suspended": true,
+    "suspended": false,
     "registeredAt": "2025-07-22T19:57:13.180Z",
     "idDocument": "demo_id.pdf",
     "proofOfAddress": "demo_proof.pdf",
@@ -13,15 +13,15 @@
   },
   {
     "email": "keanmartin75@gmail.com",
-    "password": "$2b$10$GU6tRAfLBZzRbQNXdwiZ4.OTFeGxVJeQlB6dzZ5sgQnUCVrU9pBbK",
-    "name": "smit",
-    "username": "kean",
+    "password": "$2b$10$vnfFg.y9LBfK0t/SX.JK2ugNeXcpaj6G8aRH9SjUOmllU6tV.wLYK",
+    "name": "kean",
+    "username": "kean121",
     "cell": "",
-    "ficaApproved": false,
+    "ficaApproved": true,
     "suspended": false,
-    "registeredAt": "2025-07-29T17:46:45.771Z",
+    "registeredAt": "2025-07-30T10:14:58.338Z",
     "watchlist": [],
-    "idDocument": "idCopy-1753811205583-819263086.png",
-    "proofOfAddress": "proofOfAddress-1753811205508-338433475.png"
+    "idDocument": "idCopy-1753870498199-771786983.png",
+    "proofOfAddress": "proofOfAddress-1753870498195-522608481.png"
   }
 ]

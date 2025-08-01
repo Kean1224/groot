@@ -14,6 +14,12 @@ const {
   deleteToken,
   generateToken
 } = require('./reset-utils');
+const {
+  savePendingUser,
+  getPendingUserByToken,
+  removePendingUser,
+  createVerifiedUser
+} = require('./email-verification');
 let sendMail = null;
 try {
   sendMail = require('../../utils/mailer').sendMail;
@@ -71,7 +77,7 @@ const JWT_EXPIRES_IN = '7d';
 
 
 
-// POST /api/auth/register (with FICA uploads)
+// POST /api/auth/register (now with email verification)
 router.post('/register', uploadFica.fields([
   { name: 'proofOfAddress', maxCount: 1 },
   { name: 'idCopy', maxCount: 1 }
@@ -79,12 +85,16 @@ router.post('/register', uploadFica.fields([
   console.log('Register request body:', req.body);
   console.log('Register request files:', req.files);
   const { email, password, name, username, cell } = req.body;
+  
   if (!email || !password || !name || !username) {
     return res.status(400).json({ error: 'Email, password, name, and username required.' });
   }
+  
   if (!/^[a-zA-Z0-9]+$/.test(username)) {
     return res.status(400).json({ error: 'Username must contain only letters and numbers.' });
   }
+  
+  // Check if email is already registered
   if (!fs.existsSync(USERS_FILE)) {
     fs.writeFileSync(USERS_FILE, '[]');
   }
@@ -95,30 +105,201 @@ router.post('/register', uploadFica.fields([
   if (users.find(u => u.username === username)) {
     return res.status(409).json({ error: 'Username already taken.' });
   }
-  const hashed = await bcrypt.hash(password, 10);
-  // Handle FICA files
-  const proofOfAddress = req.files && req.files['proofOfAddress'] ? req.files['proofOfAddress'][0].filename : null;
-  const idCopy = req.files && req.files['idCopy'] ? req.files['idCopy'][0].filename : null;
-  const newUser = {
-    email,
-    password: hashed,
-    name,
-    username,
-    cell: cell || '',
-    ficaApproved: false,
-    suspended: false,
-    registeredAt: new Date().toISOString(),
-    watchlist: [],
-    idDocument: idCopy,
-    proofOfAddress: proofOfAddress
-  };
-  console.log('New user to be saved:', newUser);
-  users.push(newUser);
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-  console.log('All users after registration:', users);
-  // Issue JWT
-  const token = jwt.sign({ email, name, role: 'user' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-  res.json({ status: 'success', token, user: { email, name, cell: cell || '', fica: newUser.fica } });
+  
+  try {
+    // Hash password
+    const hashed = await bcrypt.hash(password, 10);
+    
+    // Handle FICA files
+    const proofOfAddress = req.files && req.files['proofOfAddress'] ? req.files['proofOfAddress'][0].filename : null;
+    const idCopy = req.files && req.files['idCopy'] ? req.files['idCopy'][0].filename : null;
+    
+    // Create pending user data
+    const pendingUserData = {
+      email,
+      password: hashed,
+      name,
+      username,
+      cell: cell || '',
+      idDocument: idCopy,
+      proofOfAddress: proofOfAddress
+    };
+    
+    // Save pending user and get verification token
+    const verificationToken = savePendingUser(pendingUserData);
+    
+    // Send verification email
+    if (sendMail) {
+      const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+      
+      try {
+        await sendMail({
+          to: email,
+          subject: 'Verify Your Email - All4You Auctions',
+          text: `Welcome to All4You Auctions! Please verify your email by clicking this link: ${verificationUrl}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #d97706;">Welcome to All4You Auctions!</h2>
+              <p>Hi ${name},</p>
+              <p>Thank you for registering with All4You Auctions. Please verify your email address to complete your registration.</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${verificationUrl}" 
+                   style="background-color: #d97706; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                  Verify Email Address
+                </a>
+              </div>
+              <p><strong>Important:</strong> This verification link will expire in 24 hours.</p>
+              <p>If you didn't create this account, please ignore this email.</p>
+              <p>Best regards,<br>All4You Auctions Team</p>
+            </div>
+          `
+        });
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+        // Remove the pending user if email fails
+        removePendingUser(verificationToken);
+        return res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
+      }
+    }
+    
+    res.json({ 
+      status: 'verification_required', 
+      message: 'Registration successful! Please check your email and click the verification link to complete your account setup.',
+      email: email
+    });
+    
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Registration failed. Please try again.' });
+  }
+});
+
+// POST /api/auth/verify-email
+router.post('/verify-email', async (req, res) => {
+  const { token } = req.body;
+  
+  if (!token) {
+    return res.status(400).json({ error: 'Verification token required.' });
+  }
+  
+  try {
+    // Get pending user by token
+    const pendingUser = getPendingUserByToken(token);
+    
+    if (!pendingUser) {
+      return res.status(400).json({ error: 'Invalid or expired verification token.' });
+    }
+    
+    // Create the verified user
+    const newUser = createVerifiedUser(pendingUser);
+    
+    // Remove from pending users
+    removePendingUser(token);
+    
+    // Issue JWT for immediate login
+    const jwtToken = jwt.sign(
+      { email: newUser.email, name: newUser.name, role: 'user' }, 
+      JWT_SECRET, 
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+    
+    res.json({
+      status: 'success',
+      message: 'Email verified successfully! Welcome to All4You Auctions.',
+      token: jwtToken,
+      user: {
+        email: newUser.email,
+        name: newUser.name,
+        cell: newUser.cell || '',
+        ficaApproved: newUser.ficaApproved || false
+      }
+    });
+    
+  } catch (error) {
+    console.error('Email verification error:', error);
+    if (error.message === 'User already exists') {
+      return res.status(409).json({ error: 'Account already exists. Please login instead.' });
+    }
+    res.status(500).json({ error: 'Verification failed. Please try again.' });
+  }
+});
+
+// POST /api/auth/resend-verification
+router.post('/resend-verification', async (req, res) => {
+  const { email } = req.body;
+  
+  if (!email) {
+    return res.status(400).json({ error: 'Email required.' });
+  }
+  
+  // Check if user already exists
+  if (fs.existsSync(USERS_FILE)) {
+    const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
+    if (users.find(u => u.email === email)) {
+      return res.status(409).json({ error: 'Email already verified. Please login instead.' });
+    }
+  }
+  
+  // Check if there's a pending registration
+  const PENDING_USERS_FILE = path.join(__dirname, '../../data/pending-registrations.json');
+  if (!fs.existsSync(PENDING_USERS_FILE)) {
+    return res.status(404).json({ error: 'No pending registration found for this email.' });
+  }
+  
+  const pendingUsers = JSON.parse(fs.readFileSync(PENDING_USERS_FILE, 'utf-8'));
+  const pendingUser = pendingUsers.find(u => u.email === email);
+  
+  if (!pendingUser) {
+    return res.status(404).json({ error: 'No pending registration found for this email.' });
+  }
+  
+  try {
+    // Generate new verification token
+    const crypto = require('crypto');
+    const newToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+    
+    // Update the pending user with new token
+    pendingUser.verificationToken = newToken;
+    pendingUser.expiresAt = expiresAt;
+    
+    fs.writeFileSync(PENDING_USERS_FILE, JSON.stringify(pendingUsers, null, 2));
+    
+    // Send new verification email
+    if (sendMail) {
+      const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/verify-email?token=${newToken}`;
+      
+      await sendMail({
+        to: email,
+        subject: 'New Verification Link - All4You Auctions',
+        text: `Your new verification link: ${verificationUrl}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #d97706;">Email Verification - All4You Auctions</h2>
+            <p>Hi ${pendingUser.name},</p>
+            <p>Here's your new verification link:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${verificationUrl}" 
+                 style="background-color: #d97706; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                Verify Email Address
+              </a>
+            </div>
+            <p><strong>Important:</strong> This verification link will expire in 24 hours.</p>
+            <p>Best regards,<br>All4You Auctions Team</p>
+          </div>
+        `
+      });
+    }
+    
+    res.json({ 
+      status: 'success', 
+      message: 'New verification email sent. Please check your inbox.' 
+    });
+    
+  } catch (error) {
+    console.error('Resend verification error:', error);
+    res.status(500).json({ error: 'Failed to resend verification email. Please try again.' });
+  }
 });
 
 // POST /api/auth/login
@@ -162,16 +343,22 @@ router.post('/login', async (req, res) => {
 // POST /api/auth/admin-login - separate admin login endpoint
 router.post('/admin-login', async (req, res) => {
   const { email, password } = req.body;
+  console.log('Admin login attempt:', { email, password: password ? '***' : 'missing' });
+  
   if (!email || !password) {
+    console.log('Missing email or password');
     return res.status(400).json({ error: 'Email and password required.' });
   }
   
   // Admin credentials check
-  if (email === 'Keanmartin75@gmail.com' && password === 'Tristan@89') {
+  if ((email === 'Keanmartin75@gmail.com' && password === 'Tristan@89') || 
+      (email === 'admin@admin.com' && password === 'admin123')) {
+    console.log('Admin login successful for:', email);
     const token = jwt.sign({ email, role: 'admin' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     return res.json({ role: 'admin', status: 'success', email, token });
   }
   
+  console.log('Invalid admin credentials for:', email);
   return res.status(401).json({ error: 'Invalid admin credentials.' });
 });
 

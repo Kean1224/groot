@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import SmartBreadcrumbs from '../components/SmartBreadcrumbs';
+import ContextAwarePageHeader from '../components/ContextAwarePageHeader';
+import NavigationHelper from '../components/NavigationHelper';
 
 type Auction = {
   id: string;
@@ -16,8 +19,15 @@ type Auction = {
 export default function AuctionsPage() {
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState<string>('');
 
   useEffect(() => {
+    // Get user email for personalization
+    const storedEmail = localStorage.getItem('userEmail');
+    if (storedEmail) {
+      setUserEmail(storedEmail);
+    }
+
     const fetchAuctions = async () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions`);
@@ -38,12 +48,18 @@ export default function AuctionsPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-white px-6 py-12 max-w-6xl mx-auto">
-      <h1 className="text-4xl font-bold text-yellow-600 mb-10 text-center drop-shadow">
-        Available Auctions
-      </h1>
+    <main className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-blue-50 px-4 py-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Smart Breadcrumbs */}
+        <SmartBreadcrumbs className="mb-4" />
+        
+        {/* Context-Aware Page Header */}
+        <ContextAwarePageHeader userEmail={userEmail} />
+        
+        {/* Navigation Helper */}
+        <NavigationHelper userEmail={userEmail} />
 
-      {loading ? (
+        {loading ? (
         <p className="text-center text-gray-500">Loading auctions...</p>
       ) : auctions.length === 0 ? (
         <p className="text-center text-gray-500">No auctions available right now. Please check back later.</p>
@@ -79,6 +95,7 @@ export default function AuctionsPage() {
           ))}
         </div>
       )}
+      </div>
     </main>
   );
 }

@@ -45,107 +45,269 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountDropdown, setAccountDropdown] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>('');
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/session`, { credentials: 'include' })
+    // Check for logged-in user from localStorage first
+    const storedEmail = localStorage.getItem('userEmail');
+    const storedToken = localStorage.getItem('token');
+    
+    console.log('Header: Checking login state', { storedEmail, hasToken: !!storedToken });
+    
+    if (storedEmail) {
+      setIsLoggedIn(true);
+      setUserEmail(storedEmail);
+      console.log('Header: User logged in from localStorage', storedEmail);
+    }
+
+    // Then verify with session API
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (storedToken) {
+      headers['Authorization'] = `Bearer ${storedToken}`;
+    }
+
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/session`, { 
+      headers,
+      credentials: 'include' 
+    })
       .then(res => res.json())
-      .then(data => setIsAdmin(!!data.isAdmin));
+      .then(data => {
+        console.log('Header: Session API response', data);
+        if (data.email) {
+          setIsLoggedIn(true);
+          setUserEmail(data.email);
+          setIsAdmin(!!data.isAdmin);
+        } else {
+          // If no session and no stored email, user is logged out
+          if (!storedEmail) {
+            setIsLoggedIn(false);
+            setUserEmail('');
+          }
+        }
+      })
+      .catch((error) => {
+        console.log('Header: Session API error', error);
+        // If session check fails but we have stored email, assume logged in
+        if (storedEmail) {
+          setIsLoggedIn(true);
+          setUserEmail(storedEmail);
+        }
+      });
   }, []);
 
   const isActive = (href: string) =>
-    pathname === href ? 'underline underline-offset-4 text-black' : 'hover:text-black';
+    pathname === href ? 'bg-white/30 text-white font-bold' : 'text-white/90 hover:text-white';
 
   return (
     <>
       <Notification />
       <AddToHomeScreenPrompt />
-      <header className="bg-yellow-600 text-white shadow sticky top-0 z-50">
+      <header className="bg-gradient-to-r from-yellow-500 via-yellow-600 to-orange-500 text-white shadow-lg border-b-2 border-yellow-400 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto flex justify-between items-center px-4 py-4">
-          <Link href="/" className="flex items-center gap-2 text-2xl font-bold tracking-tight hover:text-black transition">
+          <Link href="/" className="flex items-center gap-3 text-2xl font-bold tracking-tight hover:text-white transition-all duration-300 hover:scale-105">
             <img
-              src="/img/ChatGPT%20Image%20Jul%2028,%202025,%2011_14_52%20PM.png"
-              alt="Logo"
-              className="h-10 w-10 object-contain rounded-full bg-white shadow"
-              style={{ maxWidth: 40, maxHeight: 40 }}
+              src="/logo.png.png"
+              alt="All4You Auctioneers Logo"
+              className="h-12 w-12 object-contain rounded-full bg-white/10 backdrop-blur-sm shadow-lg ring-2 ring-white/30 hover:ring-white/50 transition-all duration-300"
+              style={{ maxWidth: 48, maxHeight: 48 }}
+              onError={(e) => {
+                // Fallback to emoji if logo fails to load
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                target.nextElementSibling?.classList.remove('hidden');
+              }}
             />
-            All4You Auctioneers
+            <div className="h-12 w-12 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg ring-2 ring-white/30 hidden">
+              <span className="text-2xl">🏛️</span>
+            </div>
+            <span className="bg-gradient-to-r from-white to-yellow-100 bg-clip-text text-transparent drop-shadow-lg">
+              All4You Auctioneers
+            </span>
           </Link>
 
           {/* DESKTOP NAV */}
-          <nav className="hidden md:flex gap-6 text-sm font-semibold items-center">
-            <Link href="/auctions" className={isActive('/auctions')}>Auctions</Link>
-            <Link href="/terms" className={isActive('/terms')}>Terms</Link>
-
-            <div className="relative">
-              <button
-                onClick={() => setAccountDropdown(!accountDropdown)}
-                className="hover:text-black transition focus:outline-none"
-              >
-                My Account ▾
-              </button>
-              {accountDropdown && (
-                <div className="absolute right-0 bg-white text-black shadow-lg rounded-md mt-2 py-2 w-48 z-50">
-                  <Link
-                    href="/account/buyer"
-                    className="block px-4 py-2 hover:bg-gray-100"
-                    onClick={() => setAccountDropdown(false)}
-                  >
-                    Buyer Invoices
-                  </Link>
-                  <Link
-                    href="/account/seller"
-                    className="block px-4 py-2 hover:bg-gray-100"
-                    onClick={() => setAccountDropdown(false)}
-                  >
-                    Seller Invoices
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            <Link href="/contact" className={isActive('/contact')}>Contact</Link>
-            <Link href="/my-auctions/invoices" className={isActive('/my-auctions/invoices')}>My Auctions</Link>
-            {isAdmin && (
+          <nav className="hidden md:flex gap-8 text-sm font-semibold items-center">
+            <Link href="/terms" className={`${isActive('/terms')} px-3 py-2 rounded-full transition-all duration-200 hover:bg-white/20 hover:backdrop-blur-sm`}>
+              📋 Terms
+            </Link>
+            <Link href="/contact" className={`${isActive('/contact')} px-3 py-2 rounded-full transition-all duration-200 hover:bg-white/20 hover:backdrop-blur-sm`}>
+              📞 Contact
+            </Link>
+            
+            {/* Show these only for logged-in users */}
+            {isLoggedIn && (
               <>
-                <Link href="/admin/inbox" className={isActive('/admin/inbox')}>Admin Inbox</Link>
-                <Link href="/admin/refunds" className={isActive('/admin/refunds')}>Refunds</Link>
+                <Link href="/auctions" className={`${isActive('/auctions')} px-3 py-2 rounded-full transition-all duration-200 hover:bg-white/20 hover:backdrop-blur-sm`}>
+                  🏛️ Auctions
+                </Link>
+                <Link href="/watchlist" className={`${isActive('/watchlist')} px-3 py-2 rounded-full transition-all duration-200 hover:bg-white/20 hover:backdrop-blur-sm`}>
+                  ❤️ Watchlist
+                </Link>
+
+                <div className="relative">
+                  <button
+                    onClick={() => setAccountDropdown(!accountDropdown)}
+                    className="px-4 py-2 bg-blue-500/80 hover:bg-blue-600 rounded-full transition-all duration-200 hover:scale-105 font-bold shadow-md text-white focus:outline-none flex items-center gap-1"
+                  >
+                    � Invoices <span className="text-xs">▾</span>
+                  </button>
+                  {accountDropdown && (
+                    <div className="absolute right-0 bg-white text-gray-800 shadow-xl rounded-lg mt-2 py-2 w-56 z-50 border border-gray-200">
+                      <Link
+                        href="/account/buyer"
+                        className="block px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100"
+                        onClick={() => setAccountDropdown(false)}
+                      >
+                        🛒 Buyer Invoices
+                      </Link>
+                      <Link
+                        href="/account/seller"
+                        className="block px-4 py-3 hover:bg-blue-50 transition-colors"
+                        onClick={() => setAccountDropdown(false)}
+                      >
+                        💰 Seller Invoices
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                <Link href="/my-auctions/invoices" className={`${isActive('/my-auctions/invoices')} px-3 py-2 rounded-full transition-all duration-200 hover:bg-white/20 hover:backdrop-blur-sm`}>
+                  📊 My Auctions
+                </Link>
+                <Link href="/sell" className={`${isActive('/sell')} px-4 py-2 bg-green-500/80 hover:bg-green-600 rounded-full transition-all duration-200 hover:scale-105 font-bold shadow-md text-white`}>
+                  💎 Sell Item
+                </Link>
               </>
             )}
-            <Link href="/login" className={isActive('/login')}>Login</Link>
-            <Link href="/register" className={isActive('/register')}>Register</Link>
-            <Link href="/sell" className={isActive('/sell')}>Sell</Link>
+
+            {/* Admin links - only for admins */}
+            {isAdmin && (
+              <>
+                <Link href="/admin/inbox" className={`${isActive('/admin/inbox')} px-3 py-2 rounded-full transition-all duration-200 hover:bg-white/20 hover:backdrop-blur-sm`}>
+                  🔧 Admin Inbox
+                </Link>
+                <Link href="/admin/refunds" className={`${isActive('/admin/refunds')} px-3 py-2 rounded-full transition-all duration-200 hover:bg-white/20 hover:backdrop-blur-sm`}>
+                  💸 Refunds
+                </Link>
+              </>
+            )}
+
+            {/* Authentication links */}
+            {!isLoggedIn ? (
+              <>
+                <Link href="/login" className={`${isActive('/login')} px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full transition-all duration-200 hover:bg-white/30 hover:scale-105`}>
+                  🔐 Login
+                </Link>
+                <Link href="/register" className={`${isActive('/register')} px-4 py-2 bg-white text-yellow-600 rounded-full transition-all duration-200 hover:bg-yellow-50 hover:scale-105 font-bold shadow-md`}>
+                  ✨ Register
+                </Link>
+              </>
+            ) : (
+              <button 
+                onClick={() => {
+                  localStorage.removeItem('userEmail');
+                  localStorage.removeItem('token');
+                  setIsLoggedIn(false);
+                  setUserEmail('');
+                  setIsAdmin(false);
+                  window.location.href = '/';
+                }}
+                className="px-4 py-2 bg-red-500/80 backdrop-blur-sm rounded-full transition-all duration-200 hover:bg-red-600 hover:scale-105 font-semibold shadow-md"
+              >
+                🚪 Logout
+              </button>
+            )}
           </nav>
 
           {/* HAMBURGER */}
           <button
-            className="md:hidden text-white text-2xl focus:outline-none"
+            className="md:hidden text-white text-2xl focus:outline-none transition-all duration-200 hover:scale-110 hover:bg-white/20 rounded-full p-2"
             onClick={() => setMenuOpen(!menuOpen)}
           >
-            ☰
+            {menuOpen ? '✕' : '☰'}
           </button>
         </div>
 
         {/* MOBILE NAV */}
         {menuOpen && (
-          <div className="md:hidden px-4 pb-6 bg-yellow-500 text-white text-base font-semibold transition-all rounded-b-2xl shadow-xl">
-            <div className="flex flex-col gap-2 divide-y divide-yellow-200">
-              <Link href="/auctions" className={isActive('/auctions') + ' py-3 px-2 rounded-lg hover:bg-yellow-600 transition'} onClick={() => setMenuOpen(false)}>Auctions</Link>
-              <Link href="/terms" className={isActive('/terms') + ' py-3 px-2 rounded-lg hover:bg-yellow-600 transition'} onClick={() => setMenuOpen(false)}>Terms</Link>
-              <div className="pt-3 pb-1">
-                <p className="font-bold text-white mb-1 pl-1">My Account</p>
-                <div className="flex flex-col gap-1 pl-3">
-                  <Link href="/account/buyer" className="py-2 px-2 rounded hover:bg-yellow-600 transition" onClick={() => setMenuOpen(false)}>Buyer Invoices</Link>
-                  <Link href="/account/seller" className="py-2 px-2 rounded hover:bg-yellow-600 transition" onClick={() => setMenuOpen(false)}>Seller Invoices</Link>
-                </div>
-              </div>
-              <Link href="/contact" className={isActive('/contact') + ' py-3 px-2 rounded-lg hover:bg-yellow-600 transition'} onClick={() => setMenuOpen(false)}>Contact</Link>
-              <Link href="/my-auctions/invoices" className={isActive('/my-auctions/invoices') + ' py-3 px-2 rounded-lg hover:bg-yellow-600 transition'} onClick={() => setMenuOpen(false)}>My Auctions</Link>
-              {isAdmin && (
-                <Link href="/admin/inbox" className={isActive('/admin/inbox') + ' py-3 px-2 rounded-lg hover:bg-yellow-600 transition'} onClick={() => setMenuOpen(false)}>Admin Inbox</Link>
+          <div className="md:hidden px-4 pb-6 bg-gradient-to-b from-yellow-500 to-orange-500 text-white text-base font-semibold transition-all rounded-b-2xl shadow-2xl border-t border-yellow-400/50">
+            
+            <div className="flex flex-col gap-1 pt-4">
+              <Link href="/terms" className={`${isActive('/terms')} py-3 px-4 rounded-xl hover:bg-white/20 transition-all duration-200 flex items-center gap-3`} onClick={() => setMenuOpen(false)}>
+                📋 <span>Terms</span>
+              </Link>
+              <Link href="/contact" className={`${isActive('/contact')} py-3 px-4 rounded-xl hover:bg-white/20 transition-all duration-200 flex items-center gap-3`} onClick={() => setMenuOpen(false)}>
+                📞 <span>Contact</span>
+              </Link>
+              
+              {/* Show these only for logged-in users */}
+              {isLoggedIn && (
+                <>
+                  <Link href="/auctions" className={`${isActive('/auctions')} py-3 px-4 rounded-xl hover:bg-white/20 transition-all duration-200 flex items-center gap-3`} onClick={() => setMenuOpen(false)}>
+                    🏛️ <span>Auctions</span>
+                  </Link>
+                  <Link href="/watchlist" className={`${isActive('/watchlist')} py-3 px-4 rounded-xl hover:bg-white/20 transition-all duration-200 flex items-center gap-3`} onClick={() => setMenuOpen(false)}>
+                    ❤️ <span>Watchlist</span>
+                  </Link>
+                  
+                  <div className="bg-blue-500/20 rounded-xl p-3 my-2 border border-blue-400/30">
+                    <p className="font-bold text-white mb-2 text-center">� My Invoices</p>
+                    <div className="flex flex-col gap-1">
+                      <Link href="/account/buyer" className="py-2 px-3 rounded-lg hover:bg-blue-400/30 transition-all duration-200 flex items-center gap-3" onClick={() => setMenuOpen(false)}>
+                        🛒 <span>Buyer Invoices</span>
+                      </Link>
+                      <Link href="/account/seller" className="py-2 px-3 rounded-lg hover:bg-blue-400/30 transition-all duration-200 flex items-center gap-3" onClick={() => setMenuOpen(false)}>
+                        💰 <span>Seller Invoices</span>
+                      </Link>
+                    </div>
+                  </div>
+                  
+                  <Link href="/my-auctions/invoices" className={`${isActive('/my-auctions/invoices')} py-3 px-4 rounded-xl hover:bg-white/20 transition-all duration-200 flex items-center gap-3`} onClick={() => setMenuOpen(false)}>
+                    📊 <span>My Auctions</span>
+                  </Link>
+                  <Link href="/sell" className={`${isActive('/sell')} py-3 px-4 bg-green-500/80 hover:bg-green-600 rounded-xl transition-all duration-200 hover:scale-105 font-bold shadow-md text-white flex items-center gap-3`} onClick={() => setMenuOpen(false)}>
+                    💎 <span>Sell Item</span>
+                  </Link>
+                </>
               )}
-              <Link href="/login" className={isActive('/login') + ' py-3 px-2 rounded-lg hover:bg-yellow-600 transition'} onClick={() => setMenuOpen(false)}>Login</Link>
-              <Link href="/register" className={isActive('/register') + ' py-3 px-2 rounded-lg hover:bg-yellow-600 transition'} onClick={() => setMenuOpen(false)}>Register</Link>
-              <Link href="/sell" className={isActive('/sell') + ' py-3 px-2 rounded-lg hover:bg-yellow-600 transition'} onClick={() => setMenuOpen(false)}>Sell</Link>
+
+              {/* Admin links - only for admins */}
+              {isAdmin && (
+                <Link href="/admin/inbox" className={`${isActive('/admin/inbox')} py-3 px-4 rounded-xl hover:bg-white/20 transition-all duration-200 flex items-center gap-3`} onClick={() => setMenuOpen(false)}>
+                  🔧 <span>Admin Inbox</span>
+                </Link>
+              )}
+
+              {/* Authentication links */}
+              {!isLoggedIn ? (
+                <div className="border-t border-white/20 pt-4 mt-4 flex flex-col gap-2">
+                  <Link href="/login" className={`${isActive('/login')} py-3 px-4 bg-white/20 backdrop-blur-sm rounded-xl transition-all duration-200 hover:bg-white/30 flex items-center gap-3 justify-center`} onClick={() => setMenuOpen(false)}>
+                    🔐 <span>Login</span>
+                  </Link>
+                  <Link href="/register" className={`${isActive('/register')} py-3 px-4 bg-white text-yellow-600 rounded-xl transition-all duration-200 hover:bg-yellow-50 font-bold shadow-md flex items-center gap-3 justify-center`} onClick={() => setMenuOpen(false)}>
+                    ✨ <span>Register</span>
+                  </Link>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem('userEmail');
+                    localStorage.removeItem('token');
+                    setIsLoggedIn(false);
+                    setUserEmail('');
+                    setIsAdmin(false);
+                    setMenuOpen(false);
+                    window.location.href = '/';
+                  }}
+                  className="mt-4 py-3 px-4 bg-red-500/80 backdrop-blur-sm rounded-xl transition-all duration-200 hover:bg-red-600 font-semibold shadow-md flex items-center gap-3 justify-center border-t border-white/20 pt-4"
+                >
+                  🚪 <span>Logout</span>
+                </button>
+              )}
             </div>
           </div>
         )}

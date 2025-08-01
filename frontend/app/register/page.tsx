@@ -14,6 +14,8 @@ export default function RegisterPage() {
   const [proofOfAddress, setProofOfAddress] = useState<File | null>(null);
   const [idCopy, setIdCopy] = useState<File | null>(null);
   const [status, setStatus] = useState('');
+  const [verificationPending, setVerificationPending] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,9 +55,17 @@ export default function RegisterPage() {
         setStatus(`❌ ${data.error || 'Registration failed.'}`);
         return;
       }
-      setToken(data.token);
-      setStatus('✅ Account created! You are now logged in.');
-      // Optionally redirect or update global user state here
+      
+      // Handle new email verification flow
+      if (data.status === 'verification_required') {
+        setStatus(`✅ ${data.message}`);
+        setVerificationPending(true);
+        setRegisteredEmail(data.email);
+      } else {
+        // Fallback for old registration flow (shouldn't happen)
+        setToken(data.token);
+        setStatus('✅ Account created! You are now logged in.');
+      }
     } catch (err) {
       setStatus('❌ Server error. Please try again.');
     }
@@ -71,6 +81,31 @@ export default function RegisterPage() {
       setPasswordError('');
     }
   }, [password, confirmPassword]);
+
+  // Resend verification email
+  const handleResendVerification = async () => {
+    if (!registeredEmail) return;
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/resend-verification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: registeredEmail }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        setStatus('✅ New verification email sent! Please check your inbox.');
+      } else {
+        setStatus(`❌ ${data.error || 'Failed to resend verification email'}`);
+      }
+    } catch (error) {
+      setStatus('❌ Network error. Please try again.');
+    }
+  };
 
   return (
     <main className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow">
@@ -164,13 +199,39 @@ export default function RegisterPage() {
 
         <button
           type="submit"
-          className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded"
-          disabled={!!passwordError || !password || !confirmPassword}
+          className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded disabled:opacity-50"
+          disabled={!!passwordError || !password || !confirmPassword || verificationPending}
         >
-          Register
+          {verificationPending ? 'Registration Complete' : 'Register'}
         </button>
 
-        {status && <p className="text-center mt-2 text-green-600">{status}</p>}
+        {verificationPending && (
+          <div className="bg-blue-100 border border-blue-300 rounded-lg p-4 mt-4">
+            <div className="text-center">
+              <div className="text-4xl mb-2">📧</div>
+              <h3 className="font-bold text-blue-800 mb-2">Check Your Email!</h3>
+              <p className="text-blue-700 text-sm mb-3">
+                We've sent a verification link to <strong>{registeredEmail}</strong>
+              </p>
+              <p className="text-blue-600 text-xs mb-4">
+                Click the link in the email to complete your registration and automatically log in.
+              </p>
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded text-sm"
+              >
+                Resend Verification Email
+              </button>
+            </div>
+          </div>
+        )}
+
+        {status && (
+          <p className={`text-center mt-2 ${status.startsWith('❌') ? 'text-red-600' : 'text-green-600'}`}>
+            {status}
+          </p>
+        )}
       </form>
     </main>
   );

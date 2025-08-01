@@ -221,16 +221,24 @@ const verifyAdmin = require('../auth/verify-admin');
 
 // ✅ PUT: Suspend user (admin only)
 router.put('/suspend/:email', verifyAdmin, (req, res) => {
+  console.log('Suspend endpoint called for email:', req.params.email);
+  console.log('Request body:', req.body);
+  
   const users = readUsers();
   const user = users.find(u => u.email === req.params.email);
-  if (!user) return res.status(404).json({ error: 'User not found' });
+  if (!user) {
+    console.log('User not found:', req.params.email);
+    return res.status(404).json({ error: 'User not found' });
+  }
 
   // Set suspended to the value provided in the request body
   if (typeof req.body.suspended === 'boolean') {
     user.suspended = req.body.suspended;
     writeUsers(users);
+    console.log('User suspend status updated:', user.suspended);
     res.json({ message: `User ${user.suspended ? 'suspended' : 'unsuspended'}`, user });
   } else {
+    console.log('Invalid suspended value:', req.body.suspended);
     res.status(400).json({ error: 'Missing or invalid suspended value' });
   }
 });

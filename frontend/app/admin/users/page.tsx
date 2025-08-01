@@ -1,6 +1,5 @@
 'use client';
 
-
 import React, { useEffect, useState } from 'react';
 // Backend status indicator
 function BackendStatus() {
@@ -92,11 +91,18 @@ export default function AdminUsersPage() {
 
   const toggleSuspend = async (email: string, suspended?: boolean) => {
     try {
+      const token = localStorage.getItem('admin_jwt');
+      console.log('JWT token from localStorage:', token ? 'present' : 'missing');
+      console.log('Toggling suspend for:', email, 'current status:', suspended);
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/suspend/${encodeURIComponent(email)}`, {
         method: 'PUT',
         headers: getAdminHeaders(),
         body: JSON.stringify({ suspended: !suspended }),
       });
+      
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -105,6 +111,8 @@ export default function AdminUsersPage() {
         return;
       }
       
+      const successData = await response.json();
+      console.log('Suspend toggle successful:', successData);
       await fetchUsers();
     } catch (error) {
       console.error('Error toggling suspend:', error);
