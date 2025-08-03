@@ -11,11 +11,38 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState({
+    length: false,
+    capital: false,
+    number: false,
+    special: false,
+    isValid: false
+  });
   const [proofOfAddress, setProofOfAddress] = useState<File | null>(null);
   const [idCopy, setIdCopy] = useState<File | null>(null);
   const [status, setStatus] = useState('');
   const [verificationPending, setVerificationPending] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
+
+  // Password validation function
+  const validatePassword = (pwd: string) => {
+    const strength = {
+      length: pwd.length >= 8,
+      capital: /[A-Z]/.test(pwd),
+      number: /\d/.test(pwd),
+      special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd),
+      isValid: false
+    };
+    
+    strength.isValid = strength.length && strength.capital && strength.number && strength.special;
+    return strength;
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    const strength = validatePassword(value);
+    setPasswordStrength(strength);
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +54,12 @@ export default function RegisterPage() {
     if (password !== confirmPassword) {
       setPasswordError('Passwords do not match');
       setStatus('❌ Passwords do not match.');
+      return;
+    }
+    
+    // Check password strength
+    if (!passwordStrength.isValid) {
+      setStatus('❌ Password must be at least 8 characters with uppercase, number, and special character.');
       return;
     }
     // Username validation: only a-zA-Z0-9
@@ -176,10 +209,34 @@ export default function RegisterPage() {
             type="password"
             required
             value={password}
-            onChange={e => setPassword(e.target.value)}
+            onChange={e => handlePasswordChange(e.target.value)}
             className="w-full px-4 py-2 border rounded shadow-sm"
             autoComplete="new-password"
           />
+          
+          {/* Password Strength Indicators */}
+          {password && (
+            <div className="mt-2 space-y-1">
+              <div className="text-xs text-gray-600 font-medium">Password Requirements:</div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className={`px-2 py-1 rounded ${passwordStrength.length ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {passwordStrength.length ? '✓' : '✗'} 8+ characters
+                </span>
+                <span className={`px-2 py-1 rounded ${passwordStrength.capital ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {passwordStrength.capital ? '✓' : '✗'} Uppercase letter
+                </span>
+                <span className={`px-2 py-1 rounded ${passwordStrength.number ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {passwordStrength.number ? '✓' : '✗'} Number
+                </span>
+                <span className={`px-2 py-1 rounded ${passwordStrength.special ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {passwordStrength.special ? '✓' : '✗'} Special character
+                </span>
+              </div>
+              {passwordStrength.isValid && (
+                <div className="text-green-600 text-xs font-medium">✅ Password meets all requirements!</div>
+              )}
+            </div>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium">Confirm Password</label>
@@ -199,8 +256,8 @@ export default function RegisterPage() {
 
         <button
           type="submit"
-          className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded disabled:opacity-50"
-          disabled={!!passwordError || !password || !confirmPassword || verificationPending}
+          className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!!passwordError || !password || !confirmPassword || !passwordStrength.isValid || verificationPending}
         >
           {verificationPending ? 'Registration Complete' : 'Register'}
         </button>
