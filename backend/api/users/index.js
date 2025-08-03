@@ -210,6 +210,52 @@ router.post('/register', upload.fields([
 
 // ✅ PUT: Approve FICA
 const { sendMail } = require('../../utils/mailer');
+
+// ✅ POST: Admin endpoint to manually add missing users (for production fixes)
+router.post('/admin/add-user', (req, res) => {
+  try {
+    const { email, name, adminSecret } = req.body;
+    
+    // Simple admin secret check (you should use proper admin auth in production)
+    if (adminSecret !== 'all4you-admin-2025') {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const users = readUsers();
+    
+    // Check if user already exists
+    if (users.some(u => u.email === email)) {
+      return res.status(409).json({ error: 'User already exists' });
+    }
+
+    // Add the missing user with default values
+    const newUser = {
+      email,
+      password: '$2b$10$placeholder.hash.for.manual.user', // Placeholder hash
+      name,
+      ficaApproved: false,
+      suspended: false,
+      registeredAt: new Date().toISOString(),
+      watchlist: [],
+      deposits: [],
+      idDocument: 'manually_added.pdf', // Placeholder
+      proofOfAddress: 'manually_added.pdf' // Placeholder
+    };
+
+    users.push(newUser);
+    writeUsers(users);
+    
+    console.log(`✅ Admin manually added user: ${email}`);
+    res.status(201).json({ 
+      message: 'User added successfully', 
+      user: { email: newUser.email, name: newUser.name }
+    });
+  } catch (error) {
+    console.error('Error adding user:', error);
+    res.status(500).json({ error: 'Failed to add user' });
+  }
+});
+
 router.put('/fica/:email', async (req, res) => {
   const users = readUsers();
   const user = users.find(u => u.email === req.params.email);
