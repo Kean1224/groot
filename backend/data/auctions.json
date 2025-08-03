@@ -30,12 +30,27 @@
             "time": "2025-07-30T10:38:18.887Z"
           }
         ],
-        "endTime": null,
+        "endTime": "2025-08-03T18:52:07.909Z",
         "createdAt": "2025-07-30T10:10:31.364Z",
         "sellerEmail": null,
         "lotNumber": 1,
         "condition": "Good",
         "autoBids": []
+      },
+      {
+        "id": "09709265-9fd8-4be2-bbcb-f34417fb5f7e",
+        "title": "Test Lot",
+        "description": "Test lot for network error fix",
+        "startPrice": 100,
+        "image": "",
+        "currentBid": 100,
+        "bidIncrement": 10,
+        "bidHistory": [],
+        "endTime": "2025-08-03T18:53:30.253Z",
+        "createdAt": "2025-08-03T18:47:30.258Z",
+        "sellerEmail": "test@example.com",
+        "lotNumber": 2,
+        "condition": "Good"
       }
     ],
     "createdAt": "2025-07-30T10:04:32.728Z"

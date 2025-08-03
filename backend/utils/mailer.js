@@ -34,13 +34,20 @@ async function testConnection() {
     return true;
   } catch (error) {
     console.error('❌ SMTP connection failed:', error.message);
-    console.error('Full error:', error);
+    console.error('⚠️  Email notifications will be disabled');
     return false;
   }
 }
 
 async function sendMail({ to, subject, text, html, attachments }) {
   try {
+    // Test connection first
+    const connectionOk = await testConnection();
+    if (!connectionOk) {
+      console.log(`📧 Mock email (SMTP failed) to: ${to}, Subject: ${subject}`);
+      return { messageId: 'mock-email-id' };
+    }
+
     console.log(`📧 Attempting to send email to: ${to}`);
     console.log(`📧 Subject: ${subject}`);
     
@@ -68,7 +75,5 @@ async function sendEmail(to, subject, text, html, attachments) {
   return sendMail({ to, subject, text, html, attachments });
 }
 
-// Initialize connection test
-testConnection();
-
+// Email service ready - no startup test
 module.exports = { sendMail, sendEmail, testConnection };

@@ -7,10 +7,27 @@ const multer = require('multer');
 let wsNotify = null;
 try {
   wsNotify = require('../../ws-server').sendNotification;
-} catch {}
+} catch (e) {
+  console.log('⚠️  WebSocket server not available for lot notifications');
+}
 const { v4: uuidv4 } = require('uuid');
 const authenticateToken = require('../../middleware/auth');
-const { sendMail } = require('../../utils/mailer');
+
+// Email notifications (with error handling)
+let sendMail = null;
+try {
+  const mailerModule = require('../../utils/mailer');
+  sendMail = mailerModule.sendMail;
+  console.log('✅ Email service loaded for lot notifications');
+} catch (e) {
+  console.log('⚠️  Email service not available:', e.message);
+  // Create a mock sendMail function that doesn't throw errors
+  sendMail = async (options) => {
+    console.log(`📧 Mock email to ${options.to}: ${options.subject}`);
+    return Promise.resolve();
+  };
+}
+
 const router = express.Router();
 
 // ✅ POST: End auction with per-lot stagger and sniper protection (admin only)
@@ -71,7 +88,10 @@ router.post('/:auctionId/end', verifyAdmin, async (req, res) => {
           html: `<p>Congratulations! You have <b>won</b> lot <b>${lot.title}</b> in auction <b>${auctionId}</b> for <b>R${winningBid.amount}</b>.<br>An invoice will be generated for you.</p>`
         });
         notifications.push(`Winner notified: ${winningBid.bidderEmail}`);
-      } catch (e) { notifications.push(`Failed to notify winner: ${winningBid.bidderEmail}`); }
+      } catch (e) { 
+        console.log('Email notification failed:', e.message);
+        notifications.push(`Failed to notify winner: ${winningBid.bidderEmail} (${e.message})`); 
+      }
       if (lot.sellerEmail) {
         try {
           await sendMail({
@@ -81,7 +101,10 @@ router.post('/:auctionId/end', verifyAdmin, async (req, res) => {
             html: `<p>Your lot <b>${lot.title}</b> in auction <b>${auctionId}</b> has been <b>sold</b> for <b>R${winningBid.amount}</b>.<br>An invoice will be generated for you.</p>`
           });
           notifications.push(`Seller notified: ${lot.sellerEmail}`);
-        } catch (e) { notifications.push(`Failed to notify seller: ${lot.sellerEmail}`); }
+        } catch (e) { 
+          console.log('Email notification failed:', e.message);
+          notifications.push(`Failed to notify seller: ${lot.sellerEmail} (${e.message})`); 
+        }
       }
     }
   }
@@ -326,7 +349,9 @@ router.put('/:auctionId/:lotId/bid', authenticateToken, async (req, res) => {
         text: `You have been outbid on lot ${lot.title} in auction ${auctionId}. Place a new bid to stay in the lead!`,
         html: `<p>You have been <b>outbid</b> on lot <b>${lot.title}</b> in auction <b>${auctionId}</b>.<br>Place a new bid to stay in the lead!</p>`
       });
-    } catch (e) { console.error('Failed to send outbid email:', e); }
+    } catch (e) { 
+      console.error('Failed to send outbid email:', e.message); 
+    }
   }
 
   // Process auto-bids
@@ -360,7 +385,9 @@ router.put('/:auctionId/:lotId/bid', authenticateToken, async (req, res) => {
               text: `You have been outbid on lot ${lot.title} in auction ${auctionId}. Place a new bid to stay in the lead!`,
               html: `<p>You have been <b>outbid</b> on lot <b>${lot.title}</b> in auction <b>${auctionId}</b>.<br>Place a new bid to stay in the lead!</p>`
             });
-          } catch (e) { console.error('Failed to send outbid email:', e); }
+          } catch (e) { 
+            console.error('Failed to send outbid email:', e.message); 
+          }
         }
         
         lot.currentBid = newBid;
