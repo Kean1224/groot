@@ -9,10 +9,12 @@ export function useAdminAuth() {
   const [loading, setLoading] = useState(true);
 
   const clearAuthData = () => {
-    localStorage.removeItem('admin_jwt');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('admin_login_time');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('admin_jwt');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('admin_login_time');
+    }
   };
 
   const logout = () => {
@@ -22,6 +24,11 @@ export function useAdminAuth() {
   };
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('admin_jwt');

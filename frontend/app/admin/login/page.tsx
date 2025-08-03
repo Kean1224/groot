@@ -1,9 +1,10 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 
-export default function AdminLoginPage() {
+// Separate component for handling search params to avoid SSR issues
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
@@ -18,10 +19,12 @@ export default function AdminLoginPage() {
     }
 
     // Clear any existing admin data on login page load
-    localStorage.removeItem('admin_jwt');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('admin_login_time');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('admin_jwt');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('admin_login_time');
+    }
   }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -49,10 +52,12 @@ export default function AdminLoginPage() {
       console.log('Response data:', data);
       
       if (res.ok && data.token) {
-        localStorage.setItem('admin_jwt', data.token);
-        localStorage.setItem('userEmail', data.email);
-        localStorage.setItem('userRole', 'admin');
-        localStorage.setItem('admin_login_time', Date.now().toString());
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('admin_jwt', data.token);
+          localStorage.setItem('userEmail', data.email);
+          localStorage.setItem('userRole', 'admin');
+          localStorage.setItem('admin_login_time', Date.now().toString());
+        }
         console.log('Admin login successful, token and timestamp stored');
         
         // Redirect to the intended page or dashboard
@@ -124,5 +129,20 @@ export default function AdminLoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading admin login...</p>
+        </div>
+      </main>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }
