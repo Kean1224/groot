@@ -362,6 +362,20 @@ router.post('/admin-login', async (req, res) => {
   return res.status(401).json({ error: 'Invalid admin credentials.' });
 });
 
+// POST /api/auth/verify-admin - verify admin token
+router.post('/verify-admin', (req, res) => {
+  const verifyAdmin = require('./verify-admin');
+  verifyAdmin(req, res, () => {
+    // If we reach here, the verifyAdmin middleware has passed
+    res.json({ 
+      valid: true, 
+      admin: req.admin,
+      message: 'Admin token is valid',
+      timestamp: new Date().toISOString()
+    });
+  });
+});
+
 
 // GET /api/auth/session - check login and admin status
 router.get('/session', (req, res) => {

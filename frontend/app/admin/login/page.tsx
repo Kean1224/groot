@@ -1,18 +1,38 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    // Check for session expiry error
+    const errorParam = searchParams.get('error');
+    if (errorParam === 'session_expired') {
+      setError('Your session has expired. Please login again.');
+    }
+
+    // Clear any existing admin data on login page load
+    localStorage.removeItem('admin_jwt');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('admin_login_time');
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
+
     try {
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/admin-login`;
       console.log('Attempting admin login to:', apiUrl);
@@ -32,14 +52,18 @@ export default function AdminLoginPage() {
         localStorage.setItem('admin_jwt', data.token);
         localStorage.setItem('userEmail', data.email);
         localStorage.setItem('userRole', 'admin');
-        console.log('Admin login successful, token stored');
-        router.push('/admin/dashboard');
+        localStorage.setItem('admin_login_time', Date.now().toString());
+        console.log('Admin login successful, token and timestamp stored');
+        
+        // Redirect to the intended page or dashboard
+        const redirectTo = searchParams.get('redirect') || '/admin/dashboard';
+        router.push(redirectTo);
       } else {
-        setError(data.error || 'Login failed');
+        setError(data.error || 'Invalid credentials');
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('Network error');
+      setError('Network error. Please check your connection.');
     }
   };
 
@@ -68,14 +92,36 @@ export default function AdminLoginPage() {
               required
             />
           </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded p-3">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
           <button
             type="submit"
-            className="w-full bg-yellow-500 text-white py-2 rounded hover:bg-yellow-600"
+            className="w-full bg-yellow-500 text-white py-2 rounded hover:bg-yellow-600 transition-colors"
           >
             Sign In
           </button>
         </form>
+        
+        {/* Security Notice */}
+        <div className="bg-blue-50 border border-blue-200 rounded p-4 mt-6">
+          <div className="flex items-start">
+            <svg className="h-5 w-5 text-blue-400 mt-0.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="text-sm text-blue-700">
+              <p className="font-medium mb-1">Security Notice:</p>
+              <ul className="list-disc list-inside space-y-1 text-xs">
+                <li>Admin sessions expire after 4 hours</li>
+                <li>Automatic logout on inactivity</li>
+                <li>All admin actions are logged</li>
+                <li>Only authorized personnel allowed</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   );
