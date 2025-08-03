@@ -154,32 +154,12 @@ router.post('/register', uploadFica.fields([
             </div>
           `
         });
-        console.log('Verification email sent successfully to:', email);
       } catch (emailError) {
         console.error('Failed to send verification email:', emailError);
-        console.error('Email config check - SMTP_HOST:', process.env.SMTP_HOST);
-        console.error('Email config check - SMTP_USER:', process.env.SMTP_USER);
-        
         // Remove the pending user if email fails
         removePendingUser(verificationToken);
-        
-        // Provide more specific error message
-        let errorMessage = 'Failed to send verification email. Please try again.';
-        if (emailError.code === 'EAUTH') {
-          errorMessage = 'Email authentication failed. Please contact support.';
-        } else if (emailError.code === 'ECONNECTION') {
-          errorMessage = 'Email server connection failed. Please try again later.';
-        }
-        
-        return res.status(500).json({ 
-          error: errorMessage,
-          details: process.env.NODE_ENV === 'development' ? emailError.message : undefined
-        });
+        return res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
       }
-    } else {
-      console.error('sendMail function not available - check email configuration');
-      removePendingUser(verificationToken);
-      return res.status(500).json({ error: 'Email service unavailable. Please contact support.' });
     }
     
     res.json({ 

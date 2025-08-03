@@ -148,6 +148,7 @@ router.get('/:auctionId', (req, res) => {
       const endTime = new Date(now.getTime() + (5 + index) * 60 * 1000);
       lot.endTime = endTime.toISOString();
       hasChanges = true;
+      console.log(`📅 Auto-assigned end time for lot ${index + 1}: ${endTime.toLocaleString()}`);
     }
     
     // Ensure lot has a lotNumber
@@ -191,9 +192,12 @@ router.post('/:auctionId', upload.single('image'), (req, res) => {
   let lotEndTime = endTime;
   if (!lotEndTime) {
     const now = new Date();
-    // First lot ends in 5 minutes, each subsequent lot 1 minute later
-    const minutesToAdd = 5 + maxLotNumber; // maxLotNumber is the current count before adding new lot
+    // Each lot ends 1 minute after the previous lot
+    // First lot (lotNumber 1) ends in 5 minutes from now
+    // Second lot (lotNumber 2) ends in 6 minutes from now, etc.
+    const minutesToAdd = 5 + maxLotNumber; // maxLotNumber is current count, so new lot will be maxLotNumber + 1
     lotEndTime = new Date(now.getTime() + minutesToAdd * 60 * 1000).toISOString();
+    console.log(`📅 Auto-scheduled lot ${maxLotNumber + 1} to end at: ${new Date(lotEndTime).toLocaleString()}`);
   }
   
   const newLot = {

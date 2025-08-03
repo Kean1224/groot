@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 
 export type Lot = {
@@ -12,23 +12,6 @@ export type Lot = {
 };
 
 export default function LotCard({ lot }: { lot: Lot }) {
-  const [isQuickBidOpen, setIsQuickBidOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsQuickBidOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
   // Construct proper image URL - handle both old 'imageUrl' and new 'image' fields
   const imageSource = lot.imageUrl || (lot as any).image;
   const imageUrl = imageSource?.startsWith('http') 
@@ -38,13 +21,6 @@ export default function LotCard({ lot }: { lot: Lot }) {
     : imageSource || '/placeholder-lot.svg';
 
   console.log('LotCard - imageSource:', imageSource, 'final imageUrl:', imageUrl);
-
-  const handleQuickBid = (increment: number) => {
-    // Add quick bid functionality here
-    console.log(`Quick bid +R${increment} for lot:`, lot.id);
-    setIsQuickBidOpen(false);
-    // TODO: Implement actual quick bid API call
-  };
 
   return (
     <div className="border rounded-lg overflow-hidden shadow hover:shadow-lg transition">
@@ -60,72 +36,53 @@ export default function LotCard({ lot }: { lot: Lot }) {
           }}
         />
         {/* Quick Bid Dropdown */}
-        <div className="absolute top-2 right-2" ref={dropdownRef}>
-          <button 
-            onClick={(e) => {
-              e.preventDefault();
-              setIsQuickBidOpen(!isQuickBidOpen);
-            }}
-            className={`bg-green-500/90 hover:bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg transition-all duration-200 hover:scale-105 ${isQuickBidOpen ? 'scale-105 bg-green-600' : ''}`}
-          >
-            💨 <span className="hidden sm:inline">Quick Bid</span>
-            <svg 
-              className={`w-3 h-3 inline ml-1 transition-transform duration-200 ${isQuickBidOpen ? 'rotate-180' : ''}`} 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          
-          {isQuickBidOpen && (
-            <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl border-2 border-green-400 z-20 min-w-[140px] transform transition-all duration-200 ease-out">
+        <div className="absolute top-2 right-2">
+          <div className="relative group">
+            <button className="bg-green-500/90 hover:bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg transition-all duration-200 hover:scale-105">
+              💨 Quick Bid
+            </button>
+            <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl border-2 border-green-400 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 min-w-[120px]">
               <div className="p-2 space-y-1">
-                <div className="text-xs text-gray-500 text-center mb-1 font-semibold px-2">Quick bid options:</div>
                 <button 
                   onClick={(e) => {
                     e.preventDefault();
-                    handleQuickBid(100);
+                    // Add quick bid functionality here
+                    console.log('Quick bid +R100 for lot:', lot.id);
                   }}
-                  className="w-full text-left px-3 py-2 hover:bg-green-50 rounded text-sm font-semibold text-green-700 hover:text-green-800 transition-colors flex justify-between"
+                  className="w-full text-left px-3 py-2 hover:bg-green-50 rounded text-sm font-semibold text-green-700 hover:text-green-800 transition-colors"
                 >
-                  <span>+R100</span>
-                  <span className="text-xs text-gray-500">R{(lot.currentBid + 100).toLocaleString()}</span>
+                  +R100
                 </button>
                 <button 
                   onClick={(e) => {
                     e.preventDefault();
-                    handleQuickBid(250);
+                    console.log('Quick bid +R250 for lot:', lot.id);
                   }}
-                  className="w-full text-left px-3 py-2 hover:bg-green-50 rounded text-sm font-semibold text-green-700 hover:text-green-800 transition-colors flex justify-between"
+                  className="w-full text-left px-3 py-2 hover:bg-green-50 rounded text-sm font-semibold text-green-700 hover:text-green-800 transition-colors"
                 >
-                  <span>+R250</span>
-                  <span className="text-xs text-gray-500">R{(lot.currentBid + 250).toLocaleString()}</span>
+                  +R250
                 </button>
                 <button 
                   onClick={(e) => {
                     e.preventDefault();
-                    handleQuickBid(500);
+                    console.log('Quick bid +R500 for lot:', lot.id);
                   }}
-                  className="w-full text-left px-3 py-2 hover:bg-green-50 rounded text-sm font-semibold text-green-700 hover:text-green-800 transition-colors flex justify-between"
+                  className="w-full text-left px-3 py-2 hover:bg-green-50 rounded text-sm font-semibold text-green-700 hover:text-green-800 transition-colors"
                 >
-                  <span>+R500</span>
-                  <span className="text-xs text-gray-500">R{(lot.currentBid + 500).toLocaleString()}</span>
+                  +R500
                 </button>
                 <button 
                   onClick={(e) => {
                     e.preventDefault();
-                    handleQuickBid(1000);
+                    console.log('Quick bid +R1000 for lot:', lot.id);
                   }}
-                  className="w-full text-left px-3 py-2 hover:bg-green-50 rounded text-sm font-semibold text-green-700 hover:text-green-800 transition-colors flex justify-between"
+                  className="w-full text-left px-3 py-2 hover:bg-green-50 rounded text-sm font-semibold text-green-700 hover:text-green-800 transition-colors"
                 >
-                  <span>+R1000</span>
-                  <span className="text-xs text-gray-500">R{(lot.currentBid + 1000).toLocaleString()}</span>
+                  +R1000
                 </button>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
       <div className="p-4">

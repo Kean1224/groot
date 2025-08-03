@@ -138,7 +138,7 @@ export default function AdminAuctionsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium">Start Time</label>
+                <label className="block text-sm font-medium">Start Time *</label>
                 <input
                   type="datetime-local"
                   required
@@ -146,9 +146,10 @@ export default function AdminAuctionsPage() {
                   onChange={e => setForm({ ...form, startTime: e.target.value })}
                   className="w-full border px-4 py-2 rounded"
                 />
+                <p className="text-xs text-gray-500 mt-1">When the auction begins</p>
               </div>
               <div>
-                <label className="block text-sm font-medium">End Time</label>
+                <label className="block text-sm font-medium">End Time *</label>
                 <input
                   type="datetime-local"
                   required
@@ -156,6 +157,7 @@ export default function AdminAuctionsPage() {
                   onChange={e => setForm({ ...form, endTime: e.target.value })}
                   className="w-full border px-4 py-2 rounded"
                 />
+                <p className="text-xs text-gray-500 mt-1">When the auction ends (lot times are staggered)</p>
               </div>
             </div>
             <div>
