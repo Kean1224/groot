@@ -61,10 +61,6 @@ app.get('/test-upload/:filename', (req, res) => {
   }
 });
 
-// Add CORS test endpoint
-const corsTestRouter = require('./cors-test-endpoint');
-app.use('/api', corsTestRouter);
-
 app.use('/api/deposits', depositsRouter);
 
 // 🔌 Import API routes
@@ -89,9 +85,6 @@ app.get('/', (req, res) => {
 
 const contactRouter = require('./api/contact');
 app.use('/api/contact', contactRouter);
-
-const testEmailRouter = require('./api/test-email');
-app.use('/api/test-email', testEmailRouter);
 
 const invoiceRouter = require('./api/invoices/index');
 app.use('/api/invoices', invoiceRouter);
