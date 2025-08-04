@@ -415,7 +415,6 @@ export default function AuctionDetailPage() {
   
   // FICA logic
   const [ficaStatus, setFicaStatus] = useState<'not_uploaded' | 'pending' | 'approved' | 'rejected'>('not_uploaded');
-  const [ficaLoading, setFicaLoading] = useState(false);
 
   // Load watchlist from localStorage
   useEffect(() => {
@@ -464,13 +463,14 @@ export default function AuctionDetailPage() {
         // Session fetch failed - use stored email if available
       });
   }, []);
-  // Fetch FICA status if no deposit required
+  // Fetch FICA status for current user
   useEffect(() => {
-    if (!auctionId || !userEmail || auction?.depositRequired) return;
+    if (!userEmail) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/fica/${userEmail}`)
       .then(res => res.json())
-      .then(data => setFicaStatus(data.status || 'not_uploaded'));
-  }, [auctionId, userEmail, auction]);
+      .then(data => setFicaStatus(data.status || 'not_uploaded'))
+      .catch(() => setFicaStatus('not_uploaded'));
+  }, [userEmail]);
 
   // Timer useEffect - only runs on client to prevent hydration mismatch
   useEffect(() => {
@@ -484,21 +484,6 @@ export default function AuctionDetailPage() {
 
     return () => clearInterval(timer);
   }, []);
-
-  // FICA upload handler
-  const handleFicaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files[0]) return;
-    setFicaLoading(true);
-    const formData = new FormData();
-    formData.append('file', e.target.files[0]);
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/fica/${userEmail}`, {
-      method: 'POST',
-      body: formData,
-    });
-    setFicaLoading(false);
-    setFicaStatus('pending');
-    alert('FICA document uploaded. Awaiting admin approval.');
-  };
   const [buyerEmails] = useState<string[]>([]);
   const [sellerEmails] = useState<string[]>([]);
   const [selectedBuyer, setSelectedBuyer] = useState('');
@@ -1066,6 +1051,39 @@ export default function AuctionDetailPage() {
           </div>
         </div>
 
+        {/* User Account Status */}
+        {userEmail && (
+          <div className="w-full px-6 py-4 bg-white/70 border-b border-yellow-100">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+              <div className="text-lg font-semibold text-gray-700">
+                Account Status for: <span className="text-blue-600">{userEmail}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {ficaStatus === 'approved' && (
+                  <div className="bg-green-100 text-green-700 px-4 py-2 rounded-xl shadow font-bold border border-green-200 flex items-center gap-2">
+                    ✅ Account Active - You can place bids
+                  </div>
+                )}
+                {ficaStatus === 'pending' && (
+                  <div className="bg-yellow-100 text-yellow-700 px-4 py-2 rounded-xl shadow font-bold border border-yellow-200 flex items-center gap-2">
+                    ⏳ Account Pending - FICA under review
+                  </div>
+                )}
+                {ficaStatus === 'rejected' && (
+                  <div className="bg-red-100 text-red-700 px-4 py-2 rounded-xl shadow font-bold border border-red-200 flex items-center gap-2">
+                    ❌ Account Inactive - FICA rejected, please re-upload
+                  </div>
+                )}
+                {ficaStatus === 'not_uploaded' && (
+                  <div className="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl shadow font-bold border border-gray-200 flex items-center gap-2">
+                    📄 Account Inactive - Please upload FICA documents during registration
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Download Invoice Buttons */}
         <div className="w-full flex flex-col sm:flex-row justify-end items-center gap-4 px-6 py-6 border-b border-yellow-100 bg-white/70">
           <button
@@ -1473,9 +1491,8 @@ export default function AuctionDetailPage() {
 
                       {/* Quick Bid Buttons - Only for active lots AND proper authorization */}
                       {userEmail && lot.status !== 'ended' && (
-                        auction?.depositRequired ? 
-                          depositStatus === 'approved' : 
-                          ficaStatus === 'approved'
+                        (auction?.depositRequired && depositStatus === 'approved') ||
+                        (!auction?.depositRequired && ficaStatus === 'approved')
                       ) && (
                         <div className="mb-4">
                           <QuickBidButtons
@@ -1492,6 +1509,7 @@ export default function AuctionDetailPage() {
                       {lot.status !== 'ended' ? (
                         <>
                           {auction?.depositRequired ? (
+                            // Auction requires deposit
                             depositStatus === 'approved' ? (
                               <div className="flex gap-2 w-full">
                                 <button
@@ -1504,36 +1522,43 @@ export default function AuctionDetailPage() {
                                 </button>
                               </div>
                             ) : (
-                              <span className="text-xs text-red-500 font-semibold">
+                              <span className="text-xs text-red-500 font-semibold text-center">
                                 You must pay and have your deposit approved to bid.
                               </span>
                             )
                           ) : (
-                            <div className="flex flex-col items-center gap-1 w-full">
-                              <span className="text-xs text-blue-600 font-semibold">FICA required to bid.</span>
-                              {ficaStatus === 'not_uploaded' && (
-                                <>
-                                  <input type="file" accept="image/*,.pdf" onChange={handleFicaUpload} disabled={ficaLoading} className="text-xs" />
-                                  <span className="text-xs text-gray-500">Upload ID/Proof of Address</span>
-                                </>
-                              )}
-                              {ficaStatus === 'pending' && (
-                                <span className="text-xs text-yellow-600">FICA pending admin approval.</span>
-                              )}
-                              {ficaStatus === 'approved' && (
+                            // Auction doesn't require deposit - check FICA status
+                            ficaStatus === 'approved' ? (
+                              <div className="flex gap-2 w-full">
                                 <button
-                                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold px-4 py-2 rounded-lg shadow transition-all duration-150 disabled:opacity-50"
+                                  className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-bold px-4 py-2 rounded-lg shadow transition-all duration-150 disabled:opacity-50"
                                   onClick={() => handlePlaceBid(lot.id, lot.currentBid, lot.bidIncrement || 10)}
                                   disabled={biddingLoading === lot.id}
                                 >
                                   {biddingLoading === lot.id ? 'Placing Bid...' : 
                                    `📈 Bid R${lot.currentBid + (lot.bidIncrement || 10)} (+R${lot.bidIncrement || 10})`}
                                 </button>
-                              )}
-                              {ficaStatus === 'rejected' && (
-                                <span className="text-xs text-red-600">FICA rejected. Please re-upload.</span>
-                              )}
-                            </div>
+                              </div>
+                            ) : (
+                              // User account not approved for bidding
+                              <div className="flex flex-col items-center gap-1 w-full">
+                                {ficaStatus === 'not_uploaded' && (
+                                  <span className="text-xs text-red-600 font-semibold text-center">
+                                    Account not active. Please upload FICA documents during registration.
+                                  </span>
+                                )}
+                                {ficaStatus === 'pending' && (
+                                  <span className="text-xs text-yellow-600 font-semibold text-center">
+                                    Account pending approval. FICA documents under review.
+                                  </span>
+                                )}
+                                {ficaStatus === 'rejected' && (
+                                  <span className="text-xs text-red-600 font-semibold text-center">
+                                    Account inactive. FICA documents rejected - please re-upload during registration.
+                                  </span>
+                                )}
+                              </div>
+                            )
                           )}
                         </>
                       ) : (
