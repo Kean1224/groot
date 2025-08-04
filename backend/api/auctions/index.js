@@ -134,6 +134,27 @@ router.get('/:id/is-registered', (req, res) => {
   res.json({ registered });
 });
 
+// GET /registrations - Get all auction registrations (admin only)
+router.get('/registrations', verifyAdmin, (req, res) => {
+  const auctions = readAuctions();
+  const allRegistrations = [];
+  
+  auctions.forEach(auction => {
+    if (auction.registeredUsers && auction.registeredUsers.length > 0) {
+      auction.registeredUsers.forEach(email => {
+        allRegistrations.push({
+          email,
+          auctionId: auction.id,
+          auctionTitle: auction.title,
+          registeredAt: new Date().toISOString() // We don't track registration time yet
+        });
+      });
+    }
+  });
+  
+  res.json(allRegistrations);
+});
+
 // POST /:id/register - Register a user for an auction
 router.post('/:id/register', (req, res) => {
   const { id } = req.params;

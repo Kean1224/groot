@@ -2,6 +2,13 @@
   {
     "id": "1",
     "title": "Demo Auction 1",
+    "registeredUsers": [
+      "testuser1@example.com",
+      "testuser2@example.com", 
+      "bidder@test.com",
+      "john.doe@gmail.com",
+      "mary.smith@yahoo.com"
+    ],
     "lots": [
       {
         "id": "lot1",

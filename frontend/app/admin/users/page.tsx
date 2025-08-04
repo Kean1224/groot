@@ -61,11 +61,14 @@ type Auction = { id: string; title: string };
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [auctions, setAuctions] = useState<Auction[]>([]);
+  const [auctionRegistrations, setAuctionRegistrations] = useState<any[]>([]);
   const [depositActionLoading, setDepositActionLoading] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'users' | 'registrations'>('users');
 
   useEffect(() => {
     fetchUsers();
     fetchAuctions();
+    fetchAuctionRegistrations();
   }, []);
 
   const fetchUsers = async () => {
@@ -73,10 +76,30 @@ export default function AdminUsersPage() {
     const data = await res.json();
     setUsers(data);
   };
+  
   const fetchAuctions = async () => {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions`);
     const data = await res.json();
     setAuctions(data);
+  };
+
+  const fetchAuctionRegistrations = async () => {
+    try {
+      const token = localStorage.getItem('admin_jwt');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions/registrations`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAuctionRegistrations(data);
+        console.log('Fetched auction registrations:', data.length);
+      }
+    } catch (error) {
+      console.error('Error fetching auction registrations:', error);
+    }
   };
 
   // Helper to get admin auth headers
@@ -179,32 +202,65 @@ export default function AdminUsersPage() {
   return (
     <div className="flex min-h-screen">
       <AdminSidebar />
-      <main className="flex-1 p-6 max-w-5xl mx-auto">
+      <main className="flex-1 p-6 max-w-7xl mx-auto">
         <BackendStatus />
         <h1 className="text-3xl font-bold mb-6 text-yellow-600">User Management</h1>
-        {users.length === 0 ? (
-          <p>No users found.</p>
-        ) : (
-          <table className="w-full border text-sm">
-            <thead>
-              <tr className="bg-gray-100 text-left text-xs uppercase">
-                <th className="p-2">Name</th>
-                <th className="p-2">Username</th>
-                <th className="p-2">Email</th>
-                <th className="p-2">Role</th>
-                <th className="p-2">FICA</th>
-                <th className="p-2">Suspended</th>
-                <th className="p-2">Deposit Status</th>
-                <th className="p-2">Actions</th>
-                <th className="p-2">Delete</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(user => (
-                <tr key={user.email} className="border-t">
-                  <td className="p-2">{user.name}</td>
-                  <td className="p-2">{user.username || '-'}</td>
-                  <td className="p-2">{user.email}</td>
+        
+        {/* Tab Navigation */}
+        <div className="mb-6 border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'users'
+                  ? 'border-yellow-500 text-yellow-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Registered Users ({users.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('registrations')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'registrations'
+                  ? 'border-yellow-500 text-yellow-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Auction Registrations ({auctionRegistrations.length})
+            </button>
+          </nav>
+        </div>
+
+        {/* Users Tab */}
+        {activeTab === 'users' && (
+          <div>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Full User Accounts</h2>
+            <p className="text-gray-600 mb-4">Users who have created complete accounts with email verification.</p>
+            {users.length === 0 ? (
+              <p>No registered users found.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border text-sm">
+                  <thead>
+                    <tr className="bg-gray-100 text-left text-xs uppercase">
+                      <th className="p-2">Name</th>
+                      <th className="p-2">Username</th>
+                      <th className="p-2">Email</th>
+                      <th className="p-2">Role</th>
+                      <th className="p-2">FICA</th>
+                      <th className="p-2">Suspended</th>
+                      <th className="p-2">Deposit Status</th>
+                      <th className="p-2">Actions</th>
+                      <th className="p-2">Delete</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map(user => (
+                      <tr key={user.email} className="border-t">
+                        <td className="p-2">{user.name}</td>
+                        <td className="p-2">{user.username || '-'}</td>
+                        <td className="p-2">{user.email}</td>
                   <td className="p-2">{user.role || 'user'}</td>
                   <td className="p-2">
                     {user.ficaApproved ? (
@@ -321,6 +377,61 @@ export default function AdminUsersPage() {
               ))}
             </tbody>
           </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Auction Registrations Tab */}
+        {activeTab === 'registrations' && (
+          <div>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Auction Registrations</h2>
+            <p className="text-gray-600 mb-4">People who have registered for specific auctions (may not have full accounts).</p>
+            {auctionRegistrations.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No auction registrations found.</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  This shows people who clicked "Register Here" on auction pages.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border text-sm">
+                  <thead>
+                    <tr className="bg-blue-100 text-left text-xs uppercase">
+                      <th className="p-2">Email</th>
+                      <th className="p-2">Auction</th>
+                      <th className="p-2">Registered At</th>
+                      <th className="p-2">Has Full Account</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auctionRegistrations.map((reg, index) => {
+                      const hasFullAccount = users.some(user => user.email === reg.email);
+                      return (
+                        <tr key={`${reg.email}-${reg.auctionId}-${index}`} className="border-t">
+                          <td className="p-2 font-medium">{reg.email}</td>
+                          <td className="p-2">{reg.auctionTitle}</td>
+                          <td className="p-2">{new Date(reg.registeredAt).toLocaleDateString()}</td>
+                          <td className="p-2">
+                            {hasFullAccount ? (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                ✓ Yes
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                ✗ No
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         )}
       </main>
     </div>
