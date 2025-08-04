@@ -40,11 +40,18 @@ function LoginForm() {
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/admin-login`;
       console.log('Attempting admin login to:', apiUrl);
       console.log('Credentials:', { email, password: password ? '***' : 'empty' });
+      console.log('Email exact value:', JSON.stringify(email));
+      console.log('Password exact value:', JSON.stringify(password));
+      console.log('Email length:', email.length);
+      console.log('Password length:', password.length);
+      
+      const requestBody = { email, password };
+      console.log('Request body:', JSON.stringify(requestBody));
       
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify(requestBody)
       });
       
       console.log('Response status:', res.status);
@@ -76,7 +83,7 @@ function LoginForm() {
     <main className="min-h-screen flex items-center justify-center bg-gray-50 px-6 py-12">
       <div className="w-full max-w-md space-y-6 bg-white p-8 rounded shadow">
         <h1 className="text-3xl font-bold text-center text-yellow-600">Admin Login</h1>
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
           <div>
             <label className="block text-sm font-medium text-gray-700">Email</label>
             <input
@@ -84,6 +91,7 @@ function LoginForm() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               className="mt-1 w-full border border-gray-300 rounded px-3 py-2"
+              autoComplete="off"
               required
             />
           </div>
@@ -94,6 +102,7 @@ function LoginForm() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               className="mt-1 w-full border border-gray-300 rounded px-3 py-2"
+              autoComplete="new-password"
               required
             />
           </div>

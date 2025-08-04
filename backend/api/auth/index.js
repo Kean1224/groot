@@ -350,13 +350,24 @@ router.post('/admin-login', async (req, res) => {
     return res.status(400).json({ error: 'Email and password required.' });
   }
   
-  // Admin credentials check
-  if ((email === 'Keanmartin75@gmail.com' && password === 'Tristan@89') || 
-      (email === 'admin@admin.com' && password === 'admin123') ||
-      (email === 'admin@all4youauctions.co.za' && password === 'SecureAdminPass123!')) {
-    console.log('Admin login successful for:', email);
-    const token = jwt.sign({ email, role: 'admin' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    return res.json({ role: 'admin', status: 'success', email, token });
+  // Clean the input to prevent any corruption
+  const cleanEmail = String(email).trim();
+  const cleanPassword = String(password).trim();
+  
+  console.log('Cleaned credentials:', { 
+    email: cleanEmail, 
+    password: cleanPassword ? '***' : 'empty',
+    emailLen: cleanEmail.length,
+    passLen: cleanPassword.length
+  });
+  
+  // Admin credentials check with cleaned values
+  if ((cleanEmail === 'Keanmartin75@gmail.com' && cleanPassword === 'Tristan@89') || 
+      (cleanEmail === 'admin@admin.com' && cleanPassword === 'admin123') ||
+      (cleanEmail === 'admin@all4youauctions.co.za' && cleanPassword === 'SecureAdminPass123!')) {
+    console.log('Admin login successful for:', cleanEmail);
+    const token = jwt.sign({ email: cleanEmail, role: 'admin' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    return res.json({ role: 'admin', status: 'success', email: cleanEmail, token });
   }
   
   console.log('Invalid admin credentials for:', email);
