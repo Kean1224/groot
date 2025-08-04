@@ -385,8 +385,14 @@ export default function AdminUsersPage() {
         {/* Auction Registrations Tab */}
         {activeTab === 'registrations' && (
           <div>
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Auction Registrations</h2>
-            <p className="text-gray-600 mb-4">People who have registered for specific auctions (may not have full accounts).</p>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">🚨 Auction Registrations & Verification Status</h2>
+            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg mb-4">
+              <h3 className="font-semibold text-yellow-800 mb-2">⚠️ Security Alert</h3>
+              <p className="text-yellow-700 text-sm">
+                This shows ALL people who have registered for auctions. Those with incomplete verification 
+                <strong> cannot bid</strong> but are still registered. Red entries indicate security gaps.
+              </p>
+            </div>
             {auctionRegistrations.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500">No auction registrations found.</p>
@@ -401,20 +407,23 @@ export default function AdminUsersPage() {
                     <tr className="bg-blue-100 text-left text-xs uppercase">
                       <th className="p-2">Email</th>
                       <th className="p-2">Auction</th>
-                      <th className="p-2">Registered At</th>
-                      <th className="p-2">Has Full Account</th>
+                      <th className="p-2">Full Account</th>
+                      <th className="p-2">FICA Status</th>
+                      <th className="p-2">Deposit Status</th>
+                      <th className="p-2">Can Participate</th>
+                      <th className="p-2">Security Risk</th>
                     </tr>
                   </thead>
                   <tbody>
                     {auctionRegistrations.map((reg, index) => {
-                      const hasFullAccount = users.some(user => user.email === reg.email);
+                      const isSecurityRisk = !reg.canParticipate && !reg.hasFullAccount;
                       return (
-                        <tr key={`${reg.email}-${reg.auctionId}-${index}`} className="border-t">
+                        <tr key={`${reg.email}-${reg.auctionId}-${index}`} 
+                            className={`border-t ${isSecurityRisk ? 'bg-red-50' : ''}`}>
                           <td className="p-2 font-medium">{reg.email}</td>
                           <td className="p-2">{reg.auctionTitle}</td>
-                          <td className="p-2">{new Date(reg.registeredAt).toLocaleDateString()}</td>
                           <td className="p-2">
-                            {hasFullAccount ? (
+                            {reg.hasFullAccount ? (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                 ✓ Yes
                               </span>
@@ -424,11 +433,89 @@ export default function AdminUsersPage() {
                               </span>
                             )}
                           </td>
+                          <td className="p-2">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              reg.ficaStatus === 'approved' ? 'bg-green-100 text-green-800' :
+                              reg.ficaStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              reg.ficaStatus === 'rejected' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {reg.ficaStatus === 'approved' ? '✓ Approved' :
+                               reg.ficaStatus === 'pending' ? '⏳ Pending' :
+                               reg.ficaStatus === 'rejected' ? '✗ Rejected' :
+                               '⚪ Not Uploaded'}
+                            </span>
+                          </td>
+                          <td className="p-2">
+                            {reg.depositRequired ? (
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                reg.depositStatus === 'approved' ? 'bg-green-100 text-green-800' :
+                                reg.depositStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {reg.depositStatus === 'approved' ? '✓ Paid' :
+                                 reg.depositStatus === 'pending' ? '⏳ Pending' :
+                                 `✗ Not Paid (R${reg.depositAmount})`}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                Not Required
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-2">
+                            {reg.canParticipate ? (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                ✓ Can Bid
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                ✗ Cannot Bid
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-2">
+                            {isSecurityRisk ? (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                🚨 HIGH
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                ✓ OK
+                              </span>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
+                
+                {/* Summary Stats */}
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-blue-800">Total Registrations</h4>
+                    <p className="text-2xl font-bold text-blue-600">{auctionRegistrations.length}</p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-green-800">Can Participate</h4>
+                    <p className="text-2xl font-bold text-green-600">
+                      {auctionRegistrations.filter(reg => reg.canParticipate).length}
+                    </p>
+                  </div>
+                  <div className="bg-red-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-red-800">Security Risks</h4>
+                    <p className="text-2xl font-bold text-red-600">
+                      {auctionRegistrations.filter(reg => !reg.canParticipate && !reg.hasFullAccount).length}
+                    </p>
+                  </div>
+                  <div className="bg-yellow-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-yellow-800">No Full Account</h4>
+                    <p className="text-2xl font-bold text-yellow-600">
+                      {auctionRegistrations.filter(reg => !reg.hasFullAccount).length}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>

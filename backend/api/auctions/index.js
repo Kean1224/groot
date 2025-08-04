@@ -134,41 +134,140 @@ router.get('/:id/is-registered', (req, res) => {
   res.json({ registered });
 });
 
-// GET /registrations - Get all auction registrations (admin only)
-router.get('/registrations', verifyAdmin, (req, res) => {
-  const auctions = readAuctions();
-  const allRegistrations = [];
-  
-  auctions.forEach(auction => {
-    if (auction.registeredUsers && auction.registeredUsers.length > 0) {
-      auction.registeredUsers.forEach(email => {
-        allRegistrations.push({
-          email,
-          auctionId: auction.id,
-          auctionTitle: auction.title,
-          registeredAt: new Date().toISOString() // We don't track registration time yet
-        });
-      });
+// GET /registrations - Get all auction registrations with verification status (admin only)
+router.get('/registrations', verifyAdmin, async (req, res) => {
+  try {
+    const auctions = readAuctions();
+    const allRegistrations = [];
+
+    for (const auction of auctions) {
+      if (auction.registeredUsers && auction.registeredUsers.length > 0) {
+        for (const email of auction.registeredUsers) {
+          // Check if user has full account
+          const usersPath = path.join(__dirname, '../../data/users.json');
+          let hasFullAccount = false;
+          if (fs.existsSync(usersPath)) {
+            const users = JSON.parse(fs.readFileSync(usersPath, 'utf-8'));
+            hasFullAccount = users.some(user => user.email === email);
+          }
+
+          // Check FICA status
+          let ficaStatus = 'not_uploaded';
+          try {
+            const ficaResponse = await fetch(`${process.env.API_URL || 'http://localhost:5000'}/api/fica/${email}`);
+            if (ficaResponse.ok) {
+              const ficaData = await ficaResponse.json();
+              ficaStatus = ficaData.status || 'not_uploaded';
+            }
+          } catch (error) {
+            console.error(`FICA check failed for ${email}:`, error.message);
+          }
+
+          // Check deposit status for this auction
+          let depositStatus = 'not_paid';
+          if (auction.depositRequired) {
+            try {
+              const depositResponse = await fetch(`${process.env.API_URL || 'http://localhost:5000'}/api/deposits/${auction.id}/${email}`);
+              if (depositResponse.ok) {
+                const depositData = await depositResponse.json();
+                depositStatus = depositData.status || 'not_paid';
+              }
+            } catch (error) {
+              console.error(`Deposit check failed for ${email}:`, error.message);
+            }
+          }
+
+          allRegistrations.push({
+            email,
+            auctionId: auction.id,
+            auctionTitle: auction.title,
+            registeredAt: new Date().toISOString(), // We don't track registration time yet
+            hasFullAccount,
+            ficaStatus,
+            depositStatus: auction.depositRequired ? depositStatus : 'not_required',
+            depositRequired: auction.depositRequired || false,
+            depositAmount: auction.depositAmount || 0,
+            canParticipate: auction.depositRequired ? depositStatus === 'approved' : ficaStatus === 'approved'
+          });
+        }
+      }
     }
-  });
-  
-  res.json(allRegistrations);
+
+    res.json(allRegistrations);
+  } catch (error) {
+    console.error('Error fetching registrations:', error);
+    res.status(500).json({ error: 'Failed to fetch registrations' });
+  }
 });
 
-// POST /:id/register - Register a user for an auction
-router.post('/:id/register', (req, res) => {
+// POST /:id/register - Register a user for an auction with FICA/deposit verification
+router.post('/:id/register', async (req, res) => {
   const { id } = req.params;
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
+  
   const auctions = readAuctions();
   const auction = auctions.find(a => a.id === id);
   if (!auction) return res.status(404).json({ error: 'Auction not found' });
+
+  // ✅ NEW: Check FICA or Deposit authorization before allowing registration
+  if (auction.depositRequired) {
+    // Check deposit status
+    try {
+      const depositResponse = await fetch(`${process.env.API_URL || 'http://localhost:5000'}/api/deposits/${id}/${email}`);
+      if (depositResponse.ok) {
+        const depositData = await depositResponse.json();
+        if (depositData.status !== 'approved') {
+          return res.status(403).json({ 
+            error: 'Deposit approval required to register for this auction',
+            required: 'deposit',
+            depositAmount: auction.depositAmount 
+          });
+        }
+      } else {
+        return res.status(403).json({ 
+          error: 'Deposit approval required to register for this auction',
+          required: 'deposit',
+          depositAmount: auction.depositAmount 
+        });
+      }
+    } catch (error) {
+      console.error('Deposit verification error:', error);
+      return res.status(403).json({ error: 'Unable to verify deposit status' });
+    }
+  } else {
+    // Check FICA status
+    try {
+      const ficaResponse = await fetch(`${process.env.API_URL || 'http://localhost:5000'}/api/fica/${email}`);
+      if (ficaResponse.ok) {
+        const ficaData = await ficaResponse.json();
+        if (ficaData.status !== 'approved') {
+          return res.status(403).json({ 
+            error: 'FICA approval required to register for this auction',
+            required: 'fica',
+            currentStatus: ficaData.status || 'not_uploaded'
+          });
+        }
+      } else {
+        return res.status(403).json({ 
+          error: 'FICA approval required to register for this auction',
+          required: 'fica',
+          currentStatus: 'not_uploaded'
+        });
+      }
+    } catch (error) {
+      console.error('FICA verification error:', error);
+      return res.status(403).json({ error: 'Unable to verify FICA status' });
+    }
+  }
+
+  // Only register if verification passed
   if (!auction.registeredUsers) auction.registeredUsers = [];
   if (!auction.registeredUsers.includes(email)) {
     auction.registeredUsers.push(email);
     writeAuctions(auctions);
   }
-  res.json({ success: true });
+  res.json({ success: true, message: 'Registration successful - verification passed' });
 });
 
 // POST /:id/rerun - Duplicate auction and its lots with new start/end dates (admin only)
