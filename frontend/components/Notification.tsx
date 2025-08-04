@@ -16,7 +16,8 @@ export default function Notification() {
       }
     } catch {}
     if (!email) return;
-    ws = new WebSocket('ws://localhost:5050');
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:5051';
+    ws = new WebSocket(wsUrl);
     ws.onopen = () => {
       ws?.send(JSON.stringify({ type: 'register', email }));
     };
