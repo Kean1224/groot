@@ -1,9 +1,25 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Temporarily disable CSP to resolve immediate login issues
+  // Completely disable Next.js security headers and use permissive CSP
   async headers() {
-    return []
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'unsafe-hashes' data: blob:; object-src 'none';"
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          }
+        ],
+      },
+    ]
   },
+  // Disable strict mode that might interfere
+  reactStrictMode: false,
   async rewrites() {
     // Only use rewrites in development
     if (process.env.NODE_ENV === 'development') {
