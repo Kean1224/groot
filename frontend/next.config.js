@@ -1,5 +1,27 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async headers() {
+    return [
+      {
+        // Apply these headers to all routes
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob:",
+              "font-src 'self'",
+              "connect-src 'self' http://localhost:5000 https://api.all4youauctions.co.za ws://localhost:5051 wss://api.all4youauctions.co.za",
+              "frame-src 'self'",
+            ].join('; '),
+          },
+        ],
+      },
+    ]
+  },
   async rewrites() {
     // Only use rewrites in development
     if (process.env.NODE_ENV === 'development') {
