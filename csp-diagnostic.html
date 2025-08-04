@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CSP Diagnostic Test</title>
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' 'unsafe-hashes' data: blob: *; default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: *;">
+</head>
+<body>
+    <h1>CSP Eval Test</h1>
+    <div id="results"></div>
+    <button onclick="testEval()">Test Eval</button>
+    <button onclick="testSetTimeout()">Test setTimeout</button>
+    <button onclick="testNewFunction()">Test new Function()</button>
+    <button onclick="checkHeaders()">Check Headers</button>
+    
+    <script>
+        function log(message) {
+            document.getElementById('results').innerHTML += '<p>' + message + '</p>';
+            console.log(message);
+        }
+        
+        function testEval() {
+            try {
+                const result = eval('2 + 2');
+                log('✅ eval() works: ' + result);
+            } catch (e) {
+                log('❌ eval() blocked: ' + e.message);
+            }
+        }
+        
+        function testSetTimeout() {
+            try {
+                setTimeout('log("✅ setTimeout with string works")', 100);
+            } catch (e) {
+                log('❌ setTimeout with string blocked: ' + e.message);
+            }
+        }
+        
+        function testNewFunction() {
+            try {
+                const fn = new Function('return 2 + 2');
+                log('✅ new Function() works: ' + fn());
+            } catch (e) {
+                log('❌ new Function() blocked: ' + e.message);
+            }
+        }
+        
+        function checkHeaders() {
+            fetch(window.location.origin + '/admin/login')
+                .then(response => {
+                    const csp = response.headers.get('Content-Security-Policy');
+                    log('CSP Header: ' + (csp || 'None found'));
+                    
+                    // Check meta tag
+                    const metaCSP = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+                    log('Meta CSP: ' + (metaCSP ? metaCSP.content : 'None found'));
+                })
+                .catch(e => log('Error checking headers: ' + e.message));
+        }
+        
+        // Auto-run tests
+        window.onload = function() {
+            log('🔍 Starting CSP diagnostic tests...');
+            testEval();
+            testSetTimeout();
+            testNewFunction();
+            checkHeaders();
+        };
+    </script>
+</body>
+</html>
