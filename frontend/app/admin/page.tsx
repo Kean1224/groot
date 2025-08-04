@@ -16,20 +16,42 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchStats = async () => {
-    const [users, auctions, offers] = await Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`).then(res => res.json()),
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/auctions`).then(res => res.json()),
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/sell-item`).then(res => res.json())
-    ]);
+    try {
+      const token = localStorage.getItem('admin_jwt') || localStorage.getItem('token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
 
-    const lots = auctions.reduce((acc: number, auction: any) => acc + (auction.lots?.length || 0), 0);
+      const [users, auctions, offers] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, { headers }).then(res => res.json()),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions`, { headers }).then(res => res.json()),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sell-item`, { headers }).then(res => res.json())
+      ]);
 
-    setStats({
-      users: users.length,
-      auctions: auctions.length,
-      lots,
-      offers: offers.length
-    });
+      console.log('Admin Dashboard Data:', { users, auctions, offers });
+
+      const lots = auctions.reduce((acc: number, auction: any) => acc + (auction.lots?.length || 0), 0);
+
+      setStats({
+        users: users.length || 0,
+        auctions: auctions.length || 0,
+        lots,
+        offers: offers.length || 0
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      // Set default values if there's an error
+      setStats({
+        users: 0,
+        auctions: 0,
+        lots: 0,
+        offers: 0
+      });
+    }
   };
 
   const tiles = [
