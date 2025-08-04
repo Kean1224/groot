@@ -2,70 +2,18 @@
   {
     "id": "1",
     "title": "Demo Auction 1",
-    "registeredUsers": [
-      "testuser1@example.com",
-      "testuser2@example.com", 
-      "bidder@test.com",
-      "john.doe@gmail.com",
-      "mary.smith@yahoo.com"
-    ],
+    "registeredUsers": [],
     "lots": [
       {
         "id": "lot1",
         "title": "Antique Vase",
         "description": "A beautiful antique vase from the 19th century.",
         "imageUrl": "/logo.png",
-        "currentBid": 180,
+        "currentBid": 100,
         "status": "open",
-        "bidHistory": [
-          {
-            "bidderEmail": "demo@example.com",
-            "amount": 110,
-            "time": "2025-07-22T20:45:31.300Z"
-          },
-          {
-            "bidderEmail": "demo@example.com",
-            "amount": 120,
-            "time": "2025-07-22T20:45:36.111Z"
-          },
-          {
-            "bidderEmail": "demo@example.com",
-            "amount": 130,
-            "time": "2025-07-23T12:08:00.077Z"
-          },
-          {
-            "bidderEmail": "demo@example.com",
-            "amount": 140,
-            "time": "2025-07-23T12:08:08.207Z"
-          },
-          {
-            "bidderEmail": "demo@example.com",
-            "amount": 150,
-            "time": "2025-07-23T12:13:19.930Z"
-          },
-          {
-            "bidderEmail": "demo@example.com",
-            "amount": 160,
-            "time": "2025-07-23T12:14:25.575Z"
-          },
-          {
-            "bidderEmail": "demo@example.com",
-            "amount": 170,
-            "time": "2025-07-23T12:14:30.417Z"
-          },
-          {
-            "bidderEmail": "admin@admin.com",
-            "amount": 180,
-            "time": "2025-08-04T11:24:52.707Z"
-          }
-        ],
+        "bidHistory": [],
         "bidIncrement": 10,
-        "autoBids": [
-          {
-            "bidderEmail": "admin@admin.com",
-            "maxBid": 190
-          }
-        ]
+        "autoBids": []
       }
     ],
     "depositRequired": false,

@@ -179,12 +179,11 @@ function LoginForm() {
           </button>
         </form>
         
-        <div className="bg-blue-50 border border-blue-200 rounded p-4 mt-6">
-          <div className="text-sm text-blue-700">
-            <p className="font-medium mb-2">Admin Credentials:</p>
-            <p className="text-xs font-mono bg-white p-2 rounded">
-              Email: admin@admin.com<br />
-              Password: SecureAdmin2024!
+        <div className="bg-red-50 border border-red-200 rounded p-4 mt-6">
+          <div className="text-sm text-red-700">
+            <p className="font-medium mb-2">⚠️ Admin Access:</p>
+            <p className="text-xs">
+              Admin access has been disabled. No users are configured in the system.
             </p>
           </div>
         </div>

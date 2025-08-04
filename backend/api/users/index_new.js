@@ -35,29 +35,12 @@ function writeUsers(data) {
   fs.writeFileSync(usersPath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
-// Ensure demo user exists
+// No demo user creation - clean database
 function ensureDemoUser() {
-  const users = readUsers();
-  const demoExists = users.some(u => u.email === 'demo@example.com');
-
-  if (!demoExists) {
-    const demoUser = {
-      email: 'demo@example.com',
-      password: 'demo123',
-      name: 'Demo User',
-      ficaApproved: true,
-      suspended: false,
-      registeredAt: new Date().toISOString(),
-      idDocument: 'demo_id.pdf',
-      proofOfAddress: 'demo_proof.pdf',
-      watchlist: []
-    };
-    users.push(demoUser);
-    writeUsers(users);
-    console.log('✅ Demo user added.');
-  }
+  // Disabled - no demo users allowed
+  console.log('Demo user creation disabled - clean database');
 }
-ensureDemoUser();
+// ensureDemoUser(); // Disabled
 
 // ✅ DELETE user by email
 router.delete('/:email', (req, res) => {

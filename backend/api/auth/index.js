@@ -312,11 +312,7 @@ router.post('/login', async (req, res) => {
     return res.status(500).json({ error: 'User data not found.' });
   }
   const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
-  // Admin hardcoded user (updated with your credentials)
-  if (email === 'Keanmartin75@gmail.com' && password === 'Tristan@89') {
-    const token = jwt.sign({ email, role: 'admin' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    return res.json({ role: 'admin', status: 'success', email, token });
-  }
+  // No hardcoded admin users - all users must be in the database
   const user = users.find(u => u.email === email);
   if (!user) {
     return res.status(401).json({ error: 'Invalid credentials.' });
@@ -361,17 +357,9 @@ router.post('/admin-login', async (req, res) => {
     passLen: cleanPassword.length
   });
   
-  // Admin credentials check with cleaned values
-  if ((cleanEmail === 'Keanmartin75@gmail.com' && cleanPassword === 'Tristan@89') || 
-      (cleanEmail === 'admin@admin.com' && cleanPassword === 'SecureAdmin2024!') ||
-      (cleanEmail === 'admin@all4youauctions.co.za' && cleanPassword === 'SecureAdminPass123!')) {
-    console.log('Admin login successful for:', cleanEmail);
-    const token = jwt.sign({ email: cleanEmail, role: 'admin' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    return res.json({ role: 'admin', status: 'success', email: cleanEmail, token });
-  }
-  
-  console.log('Invalid admin credentials for:', email);
-  return res.status(401).json({ error: 'Invalid admin credentials.' });
+  // No hardcoded admin credentials - admin access disabled
+  console.log('Admin login attempted but no admin users configured');
+  return res.status(401).json({ error: 'Admin access disabled - no admin users configured.' });
 });
 
 // POST /api/auth/verify-admin - verify admin token

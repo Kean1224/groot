@@ -52,29 +52,12 @@ function writeUsers(data) {
   fs.writeFileSync(usersPath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
-// Ensure demo user exists
+// No demo user creation - clean database
 function ensureDemoUser() {
-  const users = readUsers();
-  const demoExists = users.some(u => u.email === 'demo@example.com');
-
-  if (!demoExists) {
-    const demoUser = {
-      email: 'demo@example.com',
-      password: 'demo123',
-      name: 'Demo User',
-      ficaApproved: true,
-      suspended: false,
-      registeredAt: new Date().toISOString(),
-      idDocument: 'demo_id.pdf',
-      proofOfAddress: 'demo_proof.pdf',
-      watchlist: []
-    };
-    users.push(demoUser);
-    writeUsers(users);
-    console.log('✅ Demo user added.');
-  }
+  // Demo user creation disabled
+  return;
 }
-ensureDemoUser();
+// ensureDemoUser(); // Disabled
 
 // ✅ POST: FICA re-upload (user can re-upload FICA docs if rejected or updating)
 router.post('/fica-reupload/:email', upload.fields([
@@ -119,29 +102,8 @@ router.post('/fica-reupload/:email', upload.fields([
   res.json({ message: 'FICA documents re-uploaded. Pending admin review.', user });
 });
 
-// Ensure demo user exists
-function ensureDemoUser() {
-  const users = readUsers();
-  const demoExists = users.some(u => u.email === 'demo@example.com');
-
-  if (!demoExists) {
-    const demoUser = {
-      email: 'demo@example.com',
-      password: 'demo123',
-      name: 'Demo User',
-      ficaApproved: true,
-      suspended: false,
-      registeredAt: new Date().toISOString(),
-      idDocument: 'demo_id.pdf',
-      proofOfAddress: 'demo_proof.pdf',
-      watchlist: []
-    };
-    users.push(demoUser);
-    writeUsers(users);
-    console.log('✅ Demo user added.');
-  }
-}
-ensureDemoUser();
+// No demo user creation - clean database (second instance)
+// ensureDemoUser(); // Disabled
 
 // ✅ GET all users
 router.get('/', (req, res) => {

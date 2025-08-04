@@ -107,6 +107,6 @@ if (command === 'approve' && email) {
   console.log('  node fica-manager.js list                    - Show all users');
   console.log('  node fica-manager.js approve <email>        - Approve user FICA');
   console.log('\n📝 EXAMPLES:');
-  console.log('  node fica-manager.js approve zadeyvdw@gmail.com');
+  console.log('  node fica-manager.js approve user@example.com');
   console.log('  node fica-manager.js list');
 }
