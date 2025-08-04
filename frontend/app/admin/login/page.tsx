@@ -10,6 +10,7 @@ function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // Check for session expiry error
@@ -30,52 +31,80 @@ function LoginForm() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
     
+    // Basic validation
     if (!email || !password) {
       setError('Please enter both email and password');
+      setIsLoading(false);
       return;
     }
 
+    // Ensure clean values
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
+
     try {
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/admin-login`;
-      console.log('Attempting admin login to:', apiUrl);
-      console.log('Credentials:', { email, password: password ? '***' : 'empty' });
-      console.log('Email exact value:', JSON.stringify(email));
-      console.log('Password exact value:', JSON.stringify(password));
-      console.log('Email length:', email.length);
-      console.log('Password length:', password.length);
       
-      const requestBody = { email, password };
-      console.log('Request body:', JSON.stringify(requestBody));
+      console.log('Admin login attempt to:', apiUrl);
+      console.log('Using credentials:', { email: cleanEmail, password: '***' });
       
-      const res = await fetch(apiUrl, {
+      const requestBody = {
+        email: cleanEmail,
+        password: cleanPassword
+      };
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+        // Prevent caching
+        cache: 'no-cache'
       });
       
-      console.log('Response status:', res.status);
-      const data = await res.json();
-      console.log('Response data:', data);
+      console.log('Response status:', response.status);
       
-      if (res.ok && data.token) {
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Login successful:', data.status);
+      
+      if (data.token && data.role === 'admin') {
+        // Store authentication data
         if (typeof window !== 'undefined') {
           localStorage.setItem('admin_jwt', data.token);
           localStorage.setItem('userEmail', data.email);
           localStorage.setItem('userRole', 'admin');
           localStorage.setItem('admin_login_time', Date.now().toString());
         }
-        console.log('Admin login successful, token and timestamp stored');
         
-        // Redirect to the intended page or dashboard
-        const redirectTo = searchParams.get('redirect') || '/admin/dashboard';
-        router.push(redirectTo);
+        console.log('Authentication data stored, redirecting...');
+        
+        // Small delay to ensure storage is complete
+        setTimeout(() => {
+          const redirectTo = searchParams.get('redirect') || '/admin';
+          router.push(redirectTo);
+        }, 100);
+        
       } else {
-        setError(data.error || 'Invalid credentials');
+        throw new Error('Invalid response format');
       }
+      
     } catch (err) {
       console.error('Login error:', err);
-      setError('Network error. Please check your connection.');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Login failed. Please check your connection and try again.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -83,29 +112,71 @@ function LoginForm() {
     <main className="min-h-screen flex items-center justify-center bg-gray-50 px-6 py-12">
       <div className="w-full max-w-md space-y-6 bg-white p-8 rounded shadow">
         <h1 className="text-3xl font-bold text-center text-yellow-600">Admin Login</h1>
-        <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
+        
+        <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
             <input
+              id="email"
+              name="email"
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="mt-1 w-full border border-gray-300 rounded px-3 py-2"
-              autoComplete="off"
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              autoComplete="username"
+              disabled={isLoading}
               required
             />
           </div>
+          
           <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
             <input
+              id="password"
+              name="password"
               type="password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="mt-1 w-full border border-gray-300 rounded px-3 py-2"
-              autoComplete="new-password"
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              autoComplete="current-password"
+              disabled={isLoading}
               required
             />
           </div>
+          
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded p-3">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+          
+          <button
+            type="submit"
+            disabled={isLoading}
+            className={`w-full py-2 rounded font-medium transition-colors ${
+              isLoading
+                ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                : 'bg-yellow-500 text-white hover:bg-yellow-600'
+            }`}
+          >
+            {isLoading ? 'Signing In...' : 'Sign In'}
+          </button>
+        </form>
+        
+        {/* Credentials hint for development */}
+        <div className="bg-blue-50 border border-blue-200 rounded p-4 mt-6">
+          <div className="text-sm text-blue-700">
+            <p className="font-medium mb-2">Admin Credentials:</p>
+            <p className="text-xs font-mono bg-white p-2 rounded">
+              Email: admin@admin.com<br />
+              Password: admin123
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded p-3">
               <p className="text-sm text-red-600">{error}</p>
