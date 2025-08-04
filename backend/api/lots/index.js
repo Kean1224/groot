@@ -290,6 +290,20 @@ router.put('/:auctionId/:lotId/autobid', authenticateToken, async (req, res) => 
   const lot = auction.lots.find(l => l.id === lotId);
   if (!lot) return res.status(404).json({ error: 'Lot not found' });
 
+  // ✅ SECURITY: Verify user exists in verified users list
+  const USERS_FILE = path.join(__dirname, '../../data/users.json');
+  if (!fs.existsSync(USERS_FILE)) {
+    return res.status(403).json({ error: 'User verification system unavailable' });
+  }
+  const verifiedUsers = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
+  const user = verifiedUsers.find(u => u.email === bidderEmail);
+  if (!user) {
+    return res.status(403).json({ error: 'User not verified. Please complete registration and email verification.' });
+  }
+  if (user.suspended) {
+    return res.status(403).json({ error: 'User account is suspended' });
+  }
+
   // ✅ NEW: Check FICA or Deposit authorization before allowing auto-bids
   if (auction.depositRequired) {
     // Check deposit status
@@ -355,6 +369,20 @@ router.put('/:auctionId/:lotId/bid', authenticateToken, async (req, res) => {
 
   const lot = auction.lots.find(l => l.id === lotId);
   if (!lot) return res.status(404).json({ error: 'Lot not found' });
+
+  // ✅ SECURITY: Verify user exists in verified users list
+  const USERS_FILE = path.join(__dirname, '../../data/users.json');
+  if (!fs.existsSync(USERS_FILE)) {
+    return res.status(403).json({ error: 'User verification system unavailable' });
+  }
+  const verifiedUsers = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
+  const user = verifiedUsers.find(u => u.email === bidderEmail);
+  if (!user) {
+    return res.status(403).json({ error: 'User not verified. Please complete registration and email verification.' });
+  }
+  if (user.suspended) {
+    return res.status(403).json({ error: 'User account is suspended' });
+  }
 
   // ✅ NEW: Check FICA or Deposit authorization before allowing bids
   if (auction.depositRequired) {
@@ -501,6 +529,20 @@ router.put('/:auctionId/:lotId/quickbid', authenticateToken, async (req, res) =>
 
   const lot = auction.lots.find(l => l.id === lotId);
   if (!lot) return res.status(404).json({ error: 'Lot not found' });
+
+  // ✅ SECURITY: Verify user exists in verified users list
+  const USERS_FILE = path.join(__dirname, '../../data/users.json');
+  if (!fs.existsSync(USERS_FILE)) {
+    return res.status(403).json({ error: 'User verification system unavailable' });
+  }
+  const verifiedUsers = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
+  const user = verifiedUsers.find(u => u.email === bidderEmail);
+  if (!user) {
+    return res.status(403).json({ error: 'User not verified. Please complete registration and email verification.' });
+  }
+  if (user.suspended) {
+    return res.status(403).json({ error: 'User account is suspended' });
+  }
 
   // ✅ FICA/Deposit validation
   if (auction.depositRequired) {
