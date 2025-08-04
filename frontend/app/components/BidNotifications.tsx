@@ -15,6 +15,8 @@ interface BidNotificationsProps {
 }
 
 export default function BidNotifications({ notifications, onRemove }: BidNotificationsProps) {
+  const [playedSounds, setPlayedSounds] = useState<Set<string>>(new Set());
+
   // Auto-remove notifications after 5 seconds
   useEffect(() => {
     notifications.forEach(notification => {
@@ -25,6 +27,30 @@ export default function BidNotifications({ notifications, onRemove }: BidNotific
       return () => clearTimeout(timer);
     });
   }, [notifications, onRemove]);
+
+  // Play sound for new notifications
+  useEffect(() => {
+    notifications.forEach(notification => {
+      if (!playedSounds.has(notification.id)) {
+        playSound(notification.type);
+        setPlayedSounds(prev => new Set(prev).add(notification.id));
+      }
+    });
+  }, [notifications, playedSounds]);
+
+  // Clean up played sounds for removed notifications
+  useEffect(() => {
+    const currentNotificationIds = new Set(notifications.map(n => n.id));
+    setPlayedSounds(prev => {
+      const filtered = new Set<string>();
+      prev.forEach(id => {
+        if (currentNotificationIds.has(id)) {
+          filtered.add(id);
+        }
+      });
+      return filtered;
+    });
+  }, [notifications]);
 
   // Play sound based on notification type
   const playSound = (type: string) => {
@@ -72,35 +98,28 @@ export default function BidNotifications({ notifications, onRemove }: BidNotific
 
   return (
     <div className="fixed top-20 right-4 z-50 space-y-2 max-w-sm">
-      {notifications.map((notification) => {
-        // Play sound when notification appears
-        React.useEffect(() => {
-          playSound(notification.type);
-        }, []);
-
-        return (
-          <div
-            key={notification.id}
-            className={`transform transition-all duration-500 ease-in-out bg-gradient-to-r ${getNotificationColor(notification.type)} text-white p-4 rounded-lg shadow-lg border-l-4 border-white animate-slide-in-right`}
-            style={{
-              animation: 'slideInRight 0.5s ease-out, fadeOut 0.5s ease-in 4.5s forwards'
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">{getNotificationIcon(notification.type)}</span>
-                <span className="font-medium text-sm">{notification.message}</span>
-              </div>
-              <button
-                onClick={() => onRemove(notification.id)}
-                className="ml-2 text-white hover:text-gray-200 font-bold text-lg leading-none"
-              >
-                ×
-              </button>
+      {notifications.map((notification) => (
+        <div
+          key={notification.id}
+          className={`transform transition-all duration-500 ease-in-out bg-gradient-to-r ${getNotificationColor(notification.type)} text-white p-4 rounded-lg shadow-lg border-l-4 border-white animate-slide-in-right`}
+          style={{
+            animation: 'slideInRight 0.5s ease-out, fadeOut 0.5s ease-in 4.5s forwards'
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <span className="text-2xl">{getNotificationIcon(notification.type)}</span>
+              <span className="font-medium text-sm">{notification.message}</span>
             </div>
+            <button
+              onClick={() => onRemove(notification.id)}
+              className="ml-2 text-white hover:text-gray-200 font-bold text-lg leading-none"
+            >
+              ×
+            </button>
           </div>
-        );
-      })}
+        </div>
+      ))}
       
       <style jsx>{`
         @keyframes slideInRight {
