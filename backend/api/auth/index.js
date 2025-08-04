@@ -357,9 +357,57 @@ router.post('/admin-login', async (req, res) => {
     passLen: cleanPassword.length
   });
   
-  // No hardcoded admin credentials - admin access disabled
-  console.log('Admin login attempted but no admin users configured');
-  return res.status(401).json({ error: 'Admin access disabled - no admin users configured.' });
+  // Admin credentials
+  const ADMIN_CREDENTIALS = [
+    {
+      email: 'keanmartin75@gmail.com',
+      password: 'admin123', // Default admin password
+      name: 'Kean Martin - Admin'
+    },
+    {
+      email: 'admin@all4youauctions.com',
+      password: 'all4you2025!',
+      name: 'System Administrator'
+    }
+  ];
+  
+  // Check against admin credentials
+  const admin = ADMIN_CREDENTIALS.find(a => a.email === cleanEmail);
+  if (!admin) {
+    console.log('Admin email not found:', cleanEmail);
+    return res.status(401).json({ error: 'Invalid admin credentials.' });
+  }
+  
+  // For simplicity, using plain text password comparison for admin
+  // In production, you should hash admin passwords too
+  if (admin.password !== cleanPassword) {
+    console.log('Admin password mismatch');
+    return res.status(401).json({ error: 'Invalid admin credentials.' });
+  }
+  
+  // Generate admin JWT token
+  const adminToken = jwt.sign(
+    { 
+      email: admin.email, 
+      name: admin.name, 
+      role: 'admin' 
+    }, 
+    JWT_SECRET, 
+    { expiresIn: '24h' }
+  );
+  
+  console.log('Admin login successful for:', cleanEmail);
+  
+  res.json({
+    status: 'success',
+    message: 'Admin login successful',
+    token: adminToken,
+    admin: {
+      email: admin.email,
+      name: admin.name,
+      role: 'admin'
+    }
+  });
 });
 
 // POST /api/auth/verify-admin - verify admin token
