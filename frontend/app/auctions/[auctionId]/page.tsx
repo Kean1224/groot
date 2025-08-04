@@ -249,10 +249,10 @@ type Lot = {
 // --- Main Component ---
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import BidNotifications from '../../components/BidNotifications';
-import QuickBidButtons from '../../components/QuickBidButtons';
-import FloatingActionButton from '../../components/FloatingActionButton';
-import { LotCardSkeleton, AuctionHeaderSkeleton } from '../../components/SkeletonLoaders';
+import BidNotifications from '../../../components/BidNotifications';
+import QuickBidButtons from '../../../components/QuickBidButtons';
+import FloatingActionButton from '../../../components/FloatingActionButton';
+import { LotCardSkeleton, AuctionHeaderSkeleton } from '../../../components/SkeletonLoaders';
 
 interface BidNotification {
   id: string;
