@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Completely disable Next.js security headers and use permissive CSP
+  // Performance optimizations
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  
+  // Security headers
   async headers() {
     return [
       {
@@ -13,13 +18,24 @@ const nextConfig = {
           {
             key: 'X-Content-Type-Options',
             value: 'nosniff'
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY'
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block'
           }
         ],
       },
     ]
   },
-  // Disable strict mode that might interfere
-  reactStrictMode: false,
+  
+  // Enable React strict mode for better development experience
+  reactStrictMode: true,
+  
+  // API rewrites for development
   async rewrites() {
     // Only use rewrites in development
     if (process.env.NODE_ENV === 'development') {

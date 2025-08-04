@@ -23,7 +23,7 @@ try {
   console.log('⚠️  Email service not available:', e.message);
   // Create a mock sendMail function that doesn't throw errors
   sendMail = async (options) => {
-    console.log(`📧 Mock email to ${options.to}: ${options.subject}`);
+    // Mock email function - email service not available
     return Promise.resolve();
   };
 }

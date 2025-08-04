@@ -437,10 +437,6 @@ export default function AuctionDetailPage() {
     const storedToken = localStorage.getItem('token');
     if (storedEmail) {
       setUserEmail(storedEmail);
-      console.log('User email set from localStorage:', storedEmail);
-    } else {
-      // If no stored email, user might need to log in for full functionality
-      console.log('No user email found - some features may be limited');
     }
     
     // Then try to get from session API with token
@@ -457,29 +453,15 @@ export default function AuctionDetailPage() {
       headers,
       credentials: 'include' 
     })
-      .then(res => {
-        console.log('Session response status:', res.status);
-        return res.json();
-      })
+      .then(res => res.json())
       .then(data => {
-        console.log('Session data:', data);
         if (data.email) {
           setUserEmail(data.email);
-          localStorage.setItem('userEmail', data.email); // Store for future use
-          console.log('User email set from session:', data.email);
-        } else {
-          console.log('No email found in session data');
-          // If no session email and no stored email, user might need to log in
-          if (!storedEmail) {
-            console.log('No user email available - user may need to log in');
-          }
+          localStorage.setItem('userEmail', data.email);
         }
       })
       .catch((error) => {
-        console.log('Session fetch failed:', error);
-        if (!storedEmail) {
-          console.log('No fallback email available');
-        }
+        // Session fetch failed - use stored email if available
       });
   }, []);
   // Fetch FICA status if no deposit required
@@ -673,22 +655,12 @@ export default function AuctionDetailPage() {
 
   // --- Handlers ---
   const handleDepositRequest = async () => {
-    console.log('Deposit request debug:', {
-      auctionId,
-      userEmail,
-      auctionIdType: typeof auctionId,
-      userEmailType: typeof userEmail,
-      auctionIdValue: auctionId,
-      userEmailValue: userEmail
-    });
-    
     if (!auctionId || !userEmail) {
       alert(`Missing auction ID or user email. AuctionID: ${auctionId}, UserEmail: ${userEmail}. Please refresh and try again.`);
       return;
     }
     setDepositLoading(true);
     try {
-      console.log('Making deposit request for:', auctionId, userEmail);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/deposits/${auctionId}/${encodeURIComponent(userEmail)}`, { 
         method: 'POST',
         headers: {
@@ -702,11 +674,9 @@ export default function AuctionDetailPage() {
       }
       
       const data = await response.json();
-      console.log('Deposit request successful:', data);
       setDepositStatus('pending');
       alert('Please pay the deposit to the provided banking details. Your payment will be reviewed by admin.');
     } catch (error) {
-      console.error('Deposit request failed:', error);
       alert(`Failed to submit deposit request: ${error.message}`);
     } finally {
       setDepositLoading(false);
@@ -785,8 +755,6 @@ export default function AuctionDetailPage() {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      console.log('Placing bid for lot:', lotId, 'Current bid:', currentBid, 'Increment:', increment);
-      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/lots/${auctionId}/${lotId}/bid`, {
         method: 'PUT',
         headers,
@@ -806,13 +774,11 @@ export default function AuctionDetailPage() {
       }
       
       const data = await response.json();
-      console.log('Bid placed successfully:', data);
       
       // Automatically add to watchlist when bid is placed
       const wasAlreadyWatchlisted = watchlist.includes(lotId);
       if (!wasAlreadyWatchlisted) {
         setWatchlist(prev => [...prev, lotId]);
-        console.log('Lot automatically added to watchlist after successful bid');
       }
       
       // Add success notification
@@ -827,7 +793,6 @@ export default function AuctionDetailPage() {
       }
       
     } catch (error) {
-      console.error('Bid placement failed:', error);
       addNotification(`Failed to place bid: ${error.message}`, 'warning');
     } finally {
       setBiddingLoading(null);
@@ -874,13 +839,11 @@ export default function AuctionDetailPage() {
       }
       
       const data = await response.json();
-      console.log('Quick bid placed successfully:', data);
       
       // Automatically add to watchlist when bid is placed
       const wasAlreadyWatchlisted = watchlist.includes(lotId);
       if (!wasAlreadyWatchlisted) {
         setWatchlist(prev => [...prev, lotId]);
-        console.log('Lot automatically added to watchlist after successful quick bid');
       }
       
       const watchlistMessage = !wasAlreadyWatchlisted ? ' Added to watchlist!' : '';
@@ -894,7 +857,6 @@ export default function AuctionDetailPage() {
       }
       
     } catch (error) {
-      console.error('Quick bid failed:', error);
       addNotification(`Quick bid failed: ${error.message}`, 'warning');
     } finally {
       setBiddingLoading(null);
@@ -956,13 +918,11 @@ export default function AuctionDetailPage() {
       const wasAlreadyWatchlisted = watchlist.includes(lotId);
       if (!wasAlreadyWatchlisted) {
         setWatchlist(prev => [...prev, lotId]);
-        console.log('Lot automatically added to watchlist after setting auto-bid');
       }
       
       const watchlistMessage = !wasAlreadyWatchlisted ? ' Added to watchlist!' : '';
       addNotification(`🤖 Auto-bid set for R${data.maxBid}! System will bid automatically when others bid against you.${watchlistMessage}`, 'success');
     } catch (error) {
-      console.error('Auto-bid failed:', error);
       addNotification(`Failed to set auto-bid: ${error.message}`, 'warning');
     } finally {
       setAutoBidLoading(prev => ({ ...prev, [lotId]: false }));
@@ -1059,13 +1019,6 @@ export default function AuctionDetailPage() {
             <div className="bg-blue-100 text-blue-800 font-mono px-6 py-2 rounded-xl shadow border border-blue-200 text-lg">
               Auction ends in: {currentTime ? formatTimeLeft(auctionEnd - currentTime) : 'Loading...'}
             </div>
-            
-            {/* Debug info for development */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="bg-gray-100 text-gray-700 px-4 py-2 rounded text-xs mt-2">
-                Debug: AuctionID: {auctionId || 'undefined'} | UserEmail: {userEmail || 'undefined'}
-              </div>
-            )}
             
             {/* User login status */}
             {!userEmail && (

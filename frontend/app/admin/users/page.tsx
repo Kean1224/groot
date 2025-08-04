@@ -114,28 +114,18 @@ export default function AdminUsersPage() {
 
   const toggleSuspend = async (email: string, suspended?: boolean) => {
     try {
-      const token = localStorage.getItem('admin_jwt');
-      console.log('JWT token from localStorage:', token ? 'present' : 'missing');
-      console.log('Toggling suspend for:', email, 'current status:', suspended);
-      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/suspend/${encodeURIComponent(email)}`, {
         method: 'PUT',
         headers: getAdminHeaders(),
         body: JSON.stringify({ suspended: !suspended }),
       });
       
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-      
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Failed to toggle suspend:', errorData);
         alert(`Failed to ${suspended ? 'unsuspend' : 'suspend'} user: ${errorData.error || 'Unknown error'}`);
         return;
       }
       
-      const successData = await response.json();
-      console.log('Suspend toggle successful:', successData);
       await fetchUsers();
     } catch (error) {
       console.error('Error toggling suspend:', error);
