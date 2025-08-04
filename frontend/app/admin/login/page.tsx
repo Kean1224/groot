@@ -72,27 +72,43 @@ function LoginForm() {
       }
       
       const data = await response.json();
-      console.log('Login successful:', data.status);
+      console.log('Full response data:', data);
+      console.log('Login response details:', {
+        status: data.status,
+        role: data.role,
+        email: data.email,
+        hasToken: !!data.token,
+        tokenLength: data.token ? data.token.length : 0
+      });
       
-      if (data.token && data.role === 'admin') {
+      // Check for successful login response
+      if (data.token && data.role === 'admin' && data.status === 'success') {
+        console.log('✅ Login validation passed, storing auth data...');
+        
         // Store authentication data
         if (typeof window !== 'undefined') {
           localStorage.setItem('admin_jwt', data.token);
           localStorage.setItem('userEmail', data.email);
           localStorage.setItem('userRole', 'admin');
           localStorage.setItem('admin_login_time', Date.now().toString());
+          
+          console.log('✅ Auth data stored in localStorage');
         }
         
-        console.log('Authentication data stored, redirecting...');
+        console.log('✅ Redirecting to admin dashboard...');
         
-        // Small delay to ensure storage is complete
-        setTimeout(() => {
-          const redirectTo = searchParams.get('redirect') || '/admin';
-          router.push(redirectTo);
-        }, 100);
+        // Immediate redirect without timeout
+        const redirectTo = searchParams.get('redirect') || '/admin';
+        router.push(redirectTo);
         
       } else {
-        throw new Error('Invalid response format');
+        console.error('❌ Login validation failed:', {
+          hasToken: !!data.token,
+          roleMatch: data.role === 'admin',
+          statusMatch: data.status === 'success',
+          actualData: data
+        });
+        throw new Error(`Invalid response format: ${JSON.stringify(data)}`);
       }
       
     } catch (err) {
