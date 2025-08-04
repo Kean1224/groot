@@ -275,7 +275,7 @@ export default function AuctionDetailPage() {
   const [currentTime, setCurrentTime] = useState<number | null>(null);
   const [depositStatus, setDepositStatus] = useState('not_paid');
   const [depositLoading, setDepositLoading] = useState(false);
-  const [isAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   // Admin FICA review state
   const [ficaList, setFicaList] = useState<any[]>([]);
   const [ficaListLoading, setFicaListLoading] = useState(false);
@@ -463,6 +463,46 @@ export default function AuctionDetailPage() {
         // Session fetch failed - use stored email if available
       });
   }, []);
+
+  // Check admin authentication
+  useEffect(() => {
+    const checkAdminAuth = async () => {
+      const adminToken = localStorage.getItem('admin_jwt');
+      const userRole = localStorage.getItem('userRole');
+      
+      if (adminToken && userRole === 'admin') {
+        // Verify admin token is still valid
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-admin`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${adminToken}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.valid && data.admin) {
+              setIsAdmin(true);
+              console.log('✅ Admin authentication verified:', data.admin.email);
+            }
+          } else {
+            // Token invalid, clear admin data
+            localStorage.removeItem('admin_jwt');
+            localStorage.removeItem('userRole');
+            setIsAdmin(false);
+          }
+        } catch (error) {
+          console.error('Admin verification failed:', error);
+          setIsAdmin(false);
+        }
+      }
+    };
+
+    checkAdminAuth();
+  }, []);
+
   // Fetch FICA status for current user
   useEffect(() => {
     if (!userEmail) return;

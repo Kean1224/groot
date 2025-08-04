@@ -82,13 +82,13 @@ function LoginForm() {
       });
       
       // Check for successful login response
-      if (data.token && data.role === 'admin' && data.status === 'success') {
+      if (data.token && data.admin && data.status === 'success') {
         console.log('✅ Login validation passed, storing auth data...');
         
         // Store authentication data
         if (typeof window !== 'undefined') {
           localStorage.setItem('admin_jwt', data.token);
-          localStorage.setItem('userEmail', data.email);
+          localStorage.setItem('userEmail', data.admin.email);
           localStorage.setItem('userRole', 'admin');
           localStorage.setItem('admin_login_time', Date.now().toString());
           // Set cookie for middleware
@@ -105,7 +105,7 @@ function LoginForm() {
       } else {
         console.error('❌ Login validation failed:', {
           hasToken: !!data.token,
-          roleMatch: data.role === 'admin',
+          hasAdmin: !!data.admin,
           statusMatch: data.status === 'success',
           actualData: data
         });
@@ -179,13 +179,34 @@ function LoginForm() {
           </button>
         </form>
         
-        <div className="bg-red-50 border border-red-200 rounded p-4 mt-6">
-          <div className="text-sm text-red-700">
-            <p className="font-medium mb-2">⚠️ Admin Access:</p>
-            <p className="text-xs">
-              Admin access has been disabled. No users are configured in the system.
-            </p>
+        {/* Quick Admin Access */}
+        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-700 font-medium mb-3">🔐 Quick Admin Access:</p>
+          <div className="space-y-2">
+            <button
+              onClick={() => {
+                setEmail('keanmartin75@gmail.com');
+                setPassword('admin123');
+              }}
+              className="w-full text-left px-3 py-2 text-xs bg-blue-100 hover:bg-blue-200 rounded border text-blue-700 transition-colors"
+              disabled={isLoading}
+            >
+              👤 Main Admin (keanmartin75@gmail.com)
+            </button>
+            <button
+              onClick={() => {
+                setEmail('admin@all4youauctions.com');
+                setPassword('all4you2025!');
+              }}
+              className="w-full text-left px-3 py-2 text-xs bg-green-100 hover:bg-green-200 rounded border text-green-700 transition-colors"
+              disabled={isLoading}
+            >
+              🏢 System Admin (admin@all4youauctions.com)
+            </button>
           </div>
+          <p className="text-xs text-gray-600 mt-2">
+            Click to auto-fill credentials, then press "Sign In"
+          </p>
         </div>
       </div>
     </main>
