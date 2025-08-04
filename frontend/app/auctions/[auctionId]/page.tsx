@@ -853,32 +853,28 @@ export default function AuctionDetailPage() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      // Calculate how many increments needed to reach the desired bid
-      const lot = lots.find(l => l.id === lotId);
-      if (!lot) return;
+      // Use the new quickbid endpoint for direct bid amounts
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/lots/${auctionId}/${lotId}/quickbid`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ 
+          bidderEmail: userEmail,
+          bidAmount: bidAmount
+        })
+      });
       
-      const increment = lot.bidIncrement || 10;
-      const bidsNeeded = Math.ceil((bidAmount - lot.currentBid) / increment);
-      
-      // Place multiple bids if needed
-      for (let i = 0; i < bidsNeeded; i++) {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/lots/${auctionId}/${lotId}/bid`, {
-          method: 'PUT',
-          headers,
-          body: JSON.stringify({ bidderEmail: userEmail })
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          if (errorData.error === 'You are already the highest bidder') {
-            addNotification('You are already the highest bidder on this lot', 'warning');
-            setBiddingLoading(null);
-            return;
-          } else {
-            throw new Error(errorData.error || `HTTP ${response.status}`);
-          }
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.error === 'You are already the highest bidder') {
+          addNotification('You are already the highest bidder on this lot', 'warning');
+        } else {
+          throw new Error(errorData.error || `HTTP ${response.status}`);
         }
+        return;
       }
+      
+      const data = await response.json();
+      console.log('Quick bid placed successfully:', data);
       
       // Automatically add to watchlist when bid is placed
       const wasAlreadyWatchlisted = watchlist.includes(lotId);
@@ -888,7 +884,7 @@ export default function AuctionDetailPage() {
       }
       
       const watchlistMessage = !wasAlreadyWatchlisted ? ' Added to watchlist!' : '';
-      addNotification(`Quick bid successful! Bid: R${bidAmount}${watchlistMessage}`, 'success');
+      addNotification(`🚀 Quick bid successful! New bid: R${data.currentBid || bidAmount}${watchlistMessage}`, 'success');
       
       // Refresh lots
       const lotsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions/${auctionId}/lots`);
@@ -1485,8 +1481,12 @@ export default function AuctionDetailPage() {
                         )}
                       </div>
 
-                      {/* Auto-bid Section - Only show for active lots */}
+                      {/* Auto-bid Section - Only show for active lots AND proper authorization */}
                       {lot.status !== 'ended' && (
+                        auction?.depositRequired ? 
+                          depositStatus === 'approved' : 
+                          ficaStatus === 'approved'
+                      ) && (
                         <div className="w-full mb-4 p-3 bg-gray-50 rounded-lg">
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Set Maximum Auto-bid
@@ -1518,8 +1518,12 @@ export default function AuctionDetailPage() {
                         </div>
                       )}
 
-                      {/* Quick Bid Buttons - Only for active lots */}
+                      {/* Quick Bid Buttons - Only for active lots AND proper authorization */}
                       {userEmail && lot.status !== 'ended' && (
+                        auction?.depositRequired ? 
+                          depositStatus === 'approved' : 
+                          ficaStatus === 'approved'
+                      ) && (
                         <div className="mb-4">
                           <QuickBidButtons
                             currentBid={lot.currentBid}
@@ -1543,7 +1547,7 @@ export default function AuctionDetailPage() {
                                   disabled={biddingLoading === lot.id}
                                 >
                                   {biddingLoading === lot.id ? 'Placing Bid...' : 
-                                   `Bid R${lot.currentBid + (lot.bidIncrement || 10)}`}
+                                   `📈 Bid R${lot.currentBid + (lot.bidIncrement || 10)} (+R${lot.bidIncrement || 10})`}
                                 </button>
                               </div>
                             ) : (
@@ -1570,7 +1574,7 @@ export default function AuctionDetailPage() {
                                   disabled={biddingLoading === lot.id}
                                 >
                                   {biddingLoading === lot.id ? 'Placing Bid...' : 
-                                   `Bid R${lot.currentBid + (lot.bidIncrement || 10)}`}
+                                   `📈 Bid R${lot.currentBid + (lot.bidIncrement || 10)} (+R${lot.bidIncrement || 10})`}
                                 </button>
                               )}
                               {ficaStatus === 'rejected' && (

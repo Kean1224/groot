@@ -19,12 +19,12 @@ export default function QuickBidButtons({
 }: QuickBidButtonsProps) {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
 
-  // Generate quick bid amounts
+  // Generate more aggressive quick bid amounts (fixed jumps)
   const quickBidAmounts = [
-    currentBid + increment,
-    currentBid + increment * 2,
-    currentBid + increment * 5,
-    currentBid + increment * 10
+    currentBid + 50,   // +R50 jump
+    currentBid + 100,  // +R100 jump  
+    currentBid + 200,  // +R200 jump
+    currentBid + 500   // +R500 jump
   ];
 
   const handleQuickBid = (amount: number) => {
@@ -50,7 +50,7 @@ export default function QuickBidButtons({
 
   return (
     <div className="bg-gradient-to-r from-yellow-50 to-blue-50 rounded-xl p-4 border border-yellow-200">
-      <h4 className="text-sm font-bold text-gray-700 mb-3 text-center">⚡ Quick Bid</h4>
+      <h4 className="text-sm font-bold text-gray-700 mb-3 text-center">🚀 Aggressive Quick Bid</h4>
       <div className="grid grid-cols-2 gap-2">
         {quickBidAmounts.map((amount, index) => {
           const isSelected = selectedAmount === amount;
@@ -93,7 +93,7 @@ export default function QuickBidButtons({
       </div>
       
       <div className="mt-3 text-xs text-gray-500 text-center">
-        💡 Tap any amount to bid instantly
+        💡 Aggressive jumps to outbid competition quickly
       </div>
     </div>
   );

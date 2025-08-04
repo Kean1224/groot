@@ -278,7 +278,7 @@ router.delete('/:auctionId/:lotId', (req, res) => {
 
 
 // ✅ NEW: Set or update auto-bid for a user on a lot (protected)
-router.put('/:auctionId/:lotId/autobid', authenticateToken, (req, res) => {
+router.put('/:auctionId/:lotId/autobid', authenticateToken, async (req, res) => {
   const { auctionId, lotId } = req.params;
   const { bidderEmail, maxBid } = req.body;
   if (!bidderEmail || typeof maxBid !== 'number') {
@@ -289,6 +289,40 @@ router.put('/:auctionId/:lotId/autobid', authenticateToken, (req, res) => {
   if (!auction) return res.status(404).json({ error: 'Auction not found' });
   const lot = auction.lots.find(l => l.id === lotId);
   if (!lot) return res.status(404).json({ error: 'Lot not found' });
+
+  // ✅ NEW: Check FICA or Deposit authorization before allowing auto-bids
+  if (auction.depositRequired) {
+    // Check deposit status
+    try {
+      const depositResponse = await fetch(`${process.env.API_URL || 'http://localhost:5000'}/api/deposits/${auctionId}/${bidderEmail}`);
+      if (depositResponse.ok) {
+        const depositData = await depositResponse.json();
+        if (depositData.status !== 'approved') {
+          return res.status(403).json({ error: 'Deposit approval required to set auto-bid' });
+        }
+      } else {
+        return res.status(403).json({ error: 'Deposit approval required to set auto-bid' });
+      }
+    } catch (error) {
+      return res.status(403).json({ error: 'Unable to verify deposit status' });
+    }
+  } else {
+    // Check FICA status
+    try {
+      const ficaResponse = await fetch(`${process.env.API_URL || 'http://localhost:5000'}/api/fica/${bidderEmail}`);
+      if (ficaResponse.ok) {
+        const ficaData = await ficaResponse.json();
+        if (ficaData.status !== 'approved') {
+          return res.status(403).json({ error: 'FICA approval required to set auto-bid' });
+        }
+      } else {
+        return res.status(403).json({ error: 'FICA approval required to set auto-bid' });
+      }
+    } catch (error) {
+      return res.status(403).json({ error: 'Unable to verify FICA status' });
+    }
+  }
+
   lot.autoBids = lot.autoBids || [];
   // Remove any previous autobid for this user
   lot.autoBids = lot.autoBids.filter(b => b.bidderEmail !== bidderEmail);
@@ -321,6 +355,39 @@ router.put('/:auctionId/:lotId/bid', authenticateToken, async (req, res) => {
 
   const lot = auction.lots.find(l => l.id === lotId);
   if (!lot) return res.status(404).json({ error: 'Lot not found' });
+
+  // ✅ NEW: Check FICA or Deposit authorization before allowing bids
+  if (auction.depositRequired) {
+    // Check deposit status
+    try {
+      const depositResponse = await fetch(`${process.env.API_URL || 'http://localhost:5000'}/api/deposits/${auctionId}/${bidderEmail}`);
+      if (depositResponse.ok) {
+        const depositData = await depositResponse.json();
+        if (depositData.status !== 'approved') {
+          return res.status(403).json({ error: 'Deposit approval required to bid' });
+        }
+      } else {
+        return res.status(403).json({ error: 'Deposit approval required to bid' });
+      }
+    } catch (error) {
+      return res.status(403).json({ error: 'Unable to verify deposit status' });
+    }
+  } else {
+    // Check FICA status
+    try {
+      const ficaResponse = await fetch(`${process.env.API_URL || 'http://localhost:5000'}/api/fica/${bidderEmail}`);
+      if (ficaResponse.ok) {
+        const ficaData = await ficaResponse.json();
+        if (ficaData.status !== 'approved') {
+          return res.status(403).json({ error: 'FICA approval required to bid' });
+        }
+      } else {
+        return res.status(403).json({ error: 'FICA approval required to bid' });
+      }
+    } catch (error) {
+      return res.status(403).json({ error: 'Unable to verify FICA status' });
+    }
+  }
 
   // Check if user is trying to bid against themselves
   let previousBidder = lot.bidHistory && lot.bidHistory.length > 0 ? lot.bidHistory[lot.bidHistory.length - 1].bidderEmail : null;
@@ -417,6 +484,108 @@ router.put('/:auctionId/:lotId/bid', authenticateToken, async (req, res) => {
 
   writeAuctions(auctions);
   res.json({ message: 'Bid placed successfully', currentBid: lot.currentBid });
+});
+
+// ✅ NEW: Place a direct bid amount (for quick bidding) (protected)
+router.put('/:auctionId/:lotId/quickbid', authenticateToken, async (req, res) => {
+  const { auctionId, lotId } = req.params;
+  const { bidderEmail, bidAmount } = req.body;
+
+  if (!bidAmount || typeof bidAmount !== 'number') {
+    return res.status(400).json({ error: 'bidAmount is required and must be a number' });
+  }
+
+  const auctions = readAuctions();
+  const auction = auctions.find(a => a.id === auctionId);
+  if (!auction) return res.status(404).json({ error: 'Auction not found' });
+
+  const lot = auction.lots.find(l => l.id === lotId);
+  if (!lot) return res.status(404).json({ error: 'Lot not found' });
+
+  // ✅ FICA/Deposit validation
+  if (auction.depositRequired) {
+    try {
+      const depositResponse = await fetch(`${process.env.API_URL || 'http://localhost:5000'}/api/deposits/${auctionId}/${bidderEmail}`);
+      if (depositResponse.ok) {
+        const depositData = await depositResponse.json();
+        if (depositData.status !== 'approved') {
+          return res.status(403).json({ error: 'Deposit approval required to bid' });
+        }
+      } else {
+        return res.status(403).json({ error: 'Deposit approval required to bid' });
+      }
+    } catch (error) {
+      return res.status(403).json({ error: 'Unable to verify deposit status' });
+    }
+  } else {
+    try {
+      const ficaResponse = await fetch(`${process.env.API_URL || 'http://localhost:5000'}/api/fica/${bidderEmail}`);
+      if (ficaResponse.ok) {
+        const ficaData = await ficaResponse.json();
+        if (ficaData.status !== 'approved') {
+          return res.status(403).json({ error: 'FICA approval required to bid' });
+        }
+      } else {
+        return res.status(403).json({ error: 'FICA approval required to bid' });
+      }
+    } catch (error) {
+      return res.status(403).json({ error: 'Unable to verify FICA status' });
+    }
+  }
+
+  // Validate bid amount
+  const increment = lot.bidIncrement || 10;
+  if (bidAmount <= lot.currentBid) {
+    return res.status(400).json({ error: `Bid must be higher than current bid of R${lot.currentBid}` });
+  }
+
+  // Check if user is already highest bidder
+  let previousBidder = lot.bidHistory && lot.bidHistory.length > 0 ? lot.bidHistory[lot.bidHistory.length - 1].bidderEmail : null;
+  if (previousBidder === bidderEmail) {
+    return res.status(400).json({ error: 'You are already the highest bidder' });
+  }
+
+  // Set the bid directly to the specified amount
+  lot.currentBid = bidAmount;
+  lot.bidHistory = lot.bidHistory || [];
+  lot.bidHistory.push({
+    bidderEmail,
+    amount: bidAmount,
+    time: new Date().toISOString()
+  });
+
+  // Process auto-bids after the direct bid
+  lot.autoBids = lot.autoBids || [];
+  let autobidTriggered = true;
+  while (autobidTriggered) {
+    autobidTriggered = false;
+    const eligible = lot.autoBids.filter(b => 
+      b.maxBid > lot.currentBid && b.bidderEmail !== bidderEmail
+    );
+
+    if (eligible.length > 0) {
+      const nextBidder = eligible.sort((a, b) => b.maxBid - a.maxBid)[0];
+      const nextBid = Math.min(nextBidder.maxBid, lot.currentBid + increment);
+      
+      if (nextBid > lot.currentBid) {
+        lot.currentBid = nextBid;
+        lot.bidHistory.push({
+          bidderEmail: nextBidder.bidderEmail,
+          amount: nextBid,
+          time: new Date().toISOString()
+        });
+        
+        bidderEmail = nextBidder.bidderEmail;
+        const stillEligible = lot.autoBids.filter(b => 
+          b.maxBid > lot.currentBid && b.bidderEmail !== bidderEmail
+        );
+        autobidTriggered = stillEligible.length > 0;
+      }
+    }
+  }
+
+  writeAuctions(auctions);
+  res.json({ message: 'Quick bid placed successfully', currentBid: lot.currentBid });
 });
 
 module.exports = router;
