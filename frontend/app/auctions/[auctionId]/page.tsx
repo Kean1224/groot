@@ -248,7 +248,7 @@ type Lot = {
 
 // --- Main Component ---
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import BidNotifications from '../../components/BidNotifications';
 import QuickBidButtons from '../../components/QuickBidButtons';
 import FloatingActionButton from '../../components/FloatingActionButton';
@@ -263,6 +263,7 @@ interface BidNotification {
 
 export default function AuctionDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const auctionId = params?.auctionId as string;
   // --- State ---
   const [auction, setAuction] = useState<any>(null);
@@ -299,7 +300,20 @@ export default function AuctionDetailPage() {
             if (foundAuction.endTime) {
               setAuctionEnd(new Date(foundAuction.endTime).getTime());
             }
+            // Initialize lots from auction data
+            if (foundAuction.lots) {
+              setLots(foundAuction.lots);
+            }
+          } else {
+            console.error('Auction not found:', auctionId);
+            addNotification(`Auction with ID ${auctionId} not found. Available auctions: ${auctions.map((a: any) => a.id).join(', ')}`, 'warning');
+            // Redirect to auctions list after 3 seconds
+            setTimeout(() => {
+              router.push('/auctions');
+            }, 3000);
           }
+        } else {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
       } catch (error) {
         console.error('Error fetching auction:', error);
@@ -510,6 +524,11 @@ export default function AuctionDetailPage() {
   const [lotsPerPage, setLotsPerPage] = useState(9);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Calculate pagination
+  const totalPages = Math.ceil((lots?.length || 0) / lotsPerPage);
+  const startIndex = (currentPage - 1) * lotsPerPage;
+  const currentLots = lots?.slice(startIndex, startIndex + lotsPerPage) || [];
+
   // Fetch auction details
   useEffect(() => {
     if (!auctionId) return;
@@ -561,8 +580,6 @@ export default function AuctionDetailPage() {
       .then(res => res.json())
       .then(data => setDepositStatus(data.status || 'not_paid'));
   }, [auctionId, userEmail]);
-  const totalPages = 1;
-  const currentLots = lots;
 
   // --- Poll lots every 3 seconds ---
   useEffect(() => {
@@ -696,7 +713,13 @@ export default function AuctionDetailPage() {
     }
   };
   const handleDownloadInvoice = (email?: string, type: 'buyer' | 'seller' = 'buyer') => {};
-  const handlePageChange = (dir: 'next' | 'prev') => {};
+  const handlePageChange = (dir: 'next' | 'prev') => {
+    if (dir === 'next' && currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    } else if (dir === 'prev' && currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
   
   const toggleDescription = (lotId: string) => {
     setExpandedDescriptions(prev => ({ ...prev, [lotId]: !prev[lotId] }));
