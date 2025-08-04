@@ -870,7 +870,13 @@ export default function AuctionDetailPage() {
         
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || `HTTP ${response.status}`);
+          if (errorData.error === 'You are already the highest bidder') {
+            addNotification('You are already the highest bidder on this lot', 'warning');
+            setBiddingLoading(null);
+            return;
+          } else {
+            throw new Error(errorData.error || `HTTP ${response.status}`);
+          }
         }
       }
       
