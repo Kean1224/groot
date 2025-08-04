@@ -668,6 +668,28 @@ export default function AuctionDetailPage() {
     }
   };
   const handleDownloadInvoice = (email?: string, type: 'buyer' | 'seller' = 'buyer') => {};
+  
+  // Download user's own invoice for this auction
+  const downloadUserInvoice = () => {
+    if (!userEmail || !auctionId) {
+      alert('Missing user information');
+      return;
+    }
+    
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/api/auction-management/invoice/buyer/${encodeURIComponent(userEmail)}/auction/${auctionId}/pdf`;
+    window.open(url, '_blank');
+  };
+
+  // Download invoice for admin
+  const downloadInvoice = (email: string, type: 'buyer' | 'seller') => {
+    if (!email || !auctionId) {
+      alert('Missing required information');
+      return;
+    }
+    
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/api/auction-management/invoice/${type}/${encodeURIComponent(email)}/auction/${auctionId}/pdf`;
+    window.open(url, '_blank');
+  };
   const handlePageChange = (dir: 'next' | 'prev') => {
     if (dir === 'next' && currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
@@ -1086,12 +1108,14 @@ export default function AuctionDetailPage() {
 
         {/* Download Invoice Buttons */}
         <div className="w-full flex flex-col sm:flex-row justify-end items-center gap-4 px-6 py-6 border-b border-yellow-100 bg-white/70">
-          <button
-            onClick={() => handleDownloadInvoice(undefined, 'buyer')}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-xl shadow-lg transition-all duration-150 focus:ring-2 focus:ring-blue-300 focus:outline-none"
-          >
-            Download My Buyer Invoice (PDF)
-          </button>
+          {userEmail && (
+            <button
+              onClick={() => downloadUserInvoice()}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-xl shadow-lg transition-all duration-150 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+            >
+              Download My Invoice (PDF)
+            </button>
+          )}
           {isAdmin && (
             <div className="flex flex-col sm:flex-row gap-2 items-center">
               <div className="flex gap-2 items-center">
@@ -1107,7 +1131,7 @@ export default function AuctionDetailPage() {
                   ))}
                 </select>
                 <button
-                  onClick={() => selectedBuyer && handleDownloadInvoice(selectedBuyer, 'buyer')}
+                  onClick={() => downloadInvoice(selectedBuyer, 'buyer')}
                   className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl shadow disabled:opacity-50 transition-all duration-150"
                   disabled={!selectedBuyer}
                 >
@@ -1127,11 +1151,11 @@ export default function AuctionDetailPage() {
                   ))}
                 </select>
                 <button
-                  onClick={() => selectedSeller && handleDownloadInvoice(selectedSeller, 'seller')}
+                  onClick={() => downloadInvoice(selectedSeller, 'seller')}
                   className="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-xl shadow disabled:opacity-50 transition-all duration-150"
                   disabled={!selectedSeller}
                 >
-                  Download Seller Invoice
+                  Download Seller Statement
                 </button>
               </div>
             </div>

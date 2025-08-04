@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "email": "keanmartin75@gmail.com",
+    "password": "$2b$10$placeholder.hash.for.manual.user",
+    "name": "Kean Martin",
+    "ficaApproved": true,
+    "suspended": false,
+    "registeredAt": "2025-08-04T17:34:14.084Z",
+    "watchlist": [],
+    "deposits": [],
+    "idDocument": "manually_added.pdf",
+    "proofOfAddress": "manually_added.pdf",
+    "ficaStatus": "approved",
+    "approvedAt": "2025-08-04T17:43:18.979Z"
+  }
+]

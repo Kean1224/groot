@@ -145,29 +145,45 @@ router.post('/register', upload.fields([
 ]), (req, res) => {
   const { email, password, name } = req.body;
 
-  if (!email || !password || !name || !req.files.idDocument || !req.files.proofOfAddress) {
-    return res.status(400).json({ error: 'Missing required fields or documents.' });
+  if (!email || !password || !name) {
+    return res.status(400).json({ error: 'Missing required fields: email, password, and name are required.' });
   }
 
   const users = readUsers();
+  
+  // Check if user already exists
   if (users.some(u => u.email === email)) {
     return res.status(409).json({ error: 'Email already exists' });
   }
 
+  // Create new user with FICA documents (if provided)
   const newUser = {
     email,
     password,
     name,
     ficaApproved: false,
+    ficaStatus: req.files.idDocument && req.files.proofOfAddress ? 'pending' : 'not_uploaded',
     suspended: false,
     registeredAt: new Date().toISOString(),
-    idDocument: req.files.idDocument[0].filename,
-    proofOfAddress: req.files.proofOfAddress[0].filename
+    idDocument: req.files.idDocument ? req.files.idDocument[0].filename : null,
+    proofOfAddress: req.files.proofOfAddress ? req.files.proofOfAddress[0].filename : null,
+    watchlist: [],
+    deposits: []
   };
 
   users.push(newUser);
   writeUsers(users);
-  res.status(201).json({ message: 'User registered', user: newUser });
+  
+  console.log(`✅ New user registered: ${email} (FICA: ${newUser.ficaStatus})`);
+  
+  res.status(201).json({ 
+    message: 'User registered successfully. Admin will review your FICA documents if uploaded.', 
+    user: {
+      email: newUser.email,
+      name: newUser.name,
+      ficaStatus: newUser.ficaStatus
+    }
+  });
 });
 
 // ✅ PUT: Approve FICA

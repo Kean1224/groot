@@ -96,6 +96,10 @@ app.use('/api/sell-item', sellItemRouter);
 const usersRouter = require('./api/users/index');
 app.use('/api/users', usersRouter);
 
+// Auction Management API
+const auctionManagementRouter = require('./api/auction-management/index');
+app.use('/api/auction-management', auctionManagementRouter);
+
 // Refunds API
 const refundsRouter = require('./api/refunds/index');
 app.use('/api/refunds', refundsRouter);
