@@ -1,3 +1,4 @@
 {
-  "/admin/login/page": "app/admin/login/page.js"
+  "/auctions/page": "app/auctions/page.js",
+  "/auctions/[auctionId]/page": "app/auctions/[auctionId]/page.js"
 }

@@ -8,7 +8,7 @@
         "title": "Antique Vase",
         "description": "A beautiful antique vase from the 19th century.",
         "imageUrl": "/logo.png",
-        "currentBid": 170,
+        "currentBid": 180,
         "status": "open",
         "bidHistory": [
           {
@@ -45,9 +45,20 @@
             "bidderEmail": "demo@example.com",
             "amount": 170,
             "time": "2025-07-23T12:14:30.417Z"
+          },
+          {
+            "bidderEmail": "admin@admin.com",
+            "amount": 180,
+            "time": "2025-08-04T11:24:52.707Z"
           }
         ],
-        "bidIncrement": 10
+        "bidIncrement": 10,
+        "autoBids": [
+          {
+            "bidderEmail": "admin@admin.com",
+            "maxBid": 190
+          }
+        ]
       }
     ],
     "depositRequired": false,

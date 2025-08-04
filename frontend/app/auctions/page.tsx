@@ -30,12 +30,23 @@ export default function AuctionsPage() {
 
     const fetchAuctions = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auctions`);
+        // Temporary hardcoded URL for debugging
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL 
+          ? `${process.env.NEXT_PUBLIC_API_URL}/api/auctions`
+          : 'http://localhost:5000/api/auctions';
+        
+        console.log('Fetching auctions from:', apiUrl);
+        console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+        
+        const response = await fetch(apiUrl);
+        console.log('Response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('Auctions data:', data);
           setAuctions(data);
         } else {
-          console.error('Failed to fetch auctions:', response.status);
+          console.error('Failed to fetch auctions:', response.status, response.statusText);
         }
       } catch (error) {
         console.error('Error fetching auctions:', error);
