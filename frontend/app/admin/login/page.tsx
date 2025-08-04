@@ -91,8 +91,9 @@ function LoginForm() {
           localStorage.setItem('userEmail', data.email);
           localStorage.setItem('userRole', 'admin');
           localStorage.setItem('admin_login_time', Date.now().toString());
-          
-          console.log('✅ Auth data stored in localStorage');
+          // Set cookie for middleware
+          document.cookie = `admin_jwt=${data.token}; path=/; SameSite=Lax;`;
+          console.log('✅ Auth data stored in localStorage and cookie');
         }
         
         console.log('✅ Redirecting to admin dashboard...');
