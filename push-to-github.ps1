@@ -13,11 +13,7 @@ Write-Host "`n📦 Adding all files to git..." -ForegroundColor Green
 git add .
 
 Write-Host "`n💾 Committing changes..." -ForegroundColor Green
-git commit -m "🚀 COMPLETE EMAIL SYSTEM IMPLEMENTATION
-
-✅ Gmail SMTP Configuration:
-- Added Gmail App Password to .env file (wqxbleqx2rse7snu2mqiklhq24h46edg)
-- SMTP settings configured for admin@all4youauctions.co.za
+git commit -m "Admin credentials update, JWT security fix, and cleanup script - Updated backend auth system with multiple admin accounts and secure JWT"
 
 ✅ Backend Email API:
 - Enhanced test-email.js with comprehensive testing endpoints

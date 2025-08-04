@@ -352,7 +352,8 @@ router.post('/admin-login', async (req, res) => {
   
   // Admin credentials check
   if ((email === 'Keanmartin75@gmail.com' && password === 'Tristan@89') || 
-      (email === 'admin@admin.com' && password === 'admin123')) {
+      (email === 'admin@admin.com' && password === 'admin123') ||
+      (email === 'admin@all4youauctions.co.za' && password === 'SecureAdminPass123!')) {
     console.log('Admin login successful for:', email);
     const token = jwt.sign({ email, role: 'admin' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     return res.json({ role: 'admin', status: 'success', email, token });
