@@ -363,7 +363,7 @@ router.post('/admin-login', async (req, res) => {
   
   // Admin credentials check with cleaned values
   if ((cleanEmail === 'Keanmartin75@gmail.com' && cleanPassword === 'Tristan@89') || 
-      (cleanEmail === 'admin@admin.com' && cleanPassword === 'admin123') ||
+      (cleanEmail === 'admin@admin.com' && cleanPassword === 'SecureAdmin2024!') ||
       (cleanEmail === 'admin@all4youauctions.co.za' && cleanPassword === 'SecureAdminPass123!')) {
     console.log('Admin login successful for:', cleanEmail);
     const token = jwt.sign({ email: cleanEmail, role: 'admin' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });

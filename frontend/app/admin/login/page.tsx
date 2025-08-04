@@ -167,7 +167,7 @@ function LoginForm() {
             <p className="font-medium mb-2">Admin Credentials:</p>
             <p className="text-xs font-mono bg-white p-2 rounded">
               Email: admin@admin.com<br />
-              Password: admin123
+              Password: SecureAdmin2024!
             </p>
           </div>
         </div>
