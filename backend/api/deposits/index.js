@@ -1,6 +1,7 @@
-﻿const express = require('express');
+const express = require('express');
 const fs = require('fs');
 const path = require('path');
+// const verifyAdmin = require('../auth/verify-admin'); // Comment out this line
 const router = express.Router();
 const dataPath = path.join(__dirname, '../../data/auctionDeposits.json');
 
@@ -37,7 +38,7 @@ router.post('/:auctionId/:email', (req, res) => {
   res.json(entry);
 });
 
-// PUT: Admin approves deposit
+// PUT: Admin approves deposit - temporarily remove verifyAdmin
 router.put('/:auctionId/:email', (req, res) => {
   const { auctionId, email } = req.params;
   const deposits = readDeposits();
@@ -50,7 +51,7 @@ router.put('/:auctionId/:email', (req, res) => {
   res.json(entry);
 });
 
-// GET: List all deposits for an auction (admin)
+// GET: List all deposits for an auction (admin) - temporarily remove verifyAdmin
 router.get('/auction/:auctionId', (req, res) => {
   const { auctionId } = req.params;
   const deposits = readDeposits().filter(d => d.auctionId === auctionId);

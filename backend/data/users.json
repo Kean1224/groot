@@ -1,7 +1,7 @@
 [
   {
     "email": "demo@example.com",
-    "password": "$2b$10$oS8v6liSmTAZghHifljwbOd66LCgQA37MtBRk.LbPeROeSQgqrBF6",
+    "password": "demo123",
     "name": "Demo User",
     "ficaApproved": true,
     "suspended": false,
@@ -12,16 +12,23 @@
     "deposits": []
   },
   {
-    "email": "keanmartin75@gmail.com",
-    "password": "$2b$10$vnfFg.y9LBfK0t/SX.JK2ugNeXcpaj6G8aRH9SjUOmllU6tV.wLYK",
-    "name": "kean",
-    "username": "kean121",
-    "cell": "",
+    "email": "test@example.com",
+    "password": "test123",
+    "name": "Test User",
     "ficaApproved": true,
     "suspended": false,
-    "registeredAt": "2025-07-30T10:14:58.338Z",
+    "registeredAt": "2025-08-01T06:15:00.000Z",
     "watchlist": [],
-    "idDocument": "idCopy-1753870498199-771786983.png",
-    "proofOfAddress": "proofOfAddress-1753870498195-522608481.png"
+    "deposits": []
+  },
+  {
+    "email": "zadeyvdw@gmail.com",
+    "password": "$2b$10$example.hash.here",
+    "name": "Zadey Van Der Walt",
+    "ficaApproved": false,
+    "suspended": false,
+    "registeredAt": "2025-08-03T10:00:00.000Z",
+    "watchlist": [],
+    "deposits": []
   }
 ]

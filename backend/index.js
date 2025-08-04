@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('./cors-config'); // Use dedicated CORS config
 const bodyParser = require('body-parser');
@@ -8,7 +10,7 @@ const app = express();
 const depositsRouter = require('./api/deposits/index');
 const PORT = process.env.PORT || 5000;
 
-// CRITICAL: Apply CORS middleware FIRST (before any routes)
+// Apply CORS middleware FIRST (before any routes)
 app.use(cors);
 app.use(bodyParser.json());
 
@@ -18,7 +20,7 @@ app.get('/api/ping', (req, res) => {
   res.json({ 
     status: 'ok', 
     time: new Date().toISOString(),
-    version: '1.4-cors-fixed-forced' // CORS middleware moved before this endpoint
+    version: '1.3-cors-fixed' // CORS middleware moved before this endpoint
   });
 });
 
@@ -30,7 +32,7 @@ app.get('/health', (req, res) => {
 // Start WebSocket server for notifications
 try {
   const { server: wsServer } = require('./ws-server');
-  const wsPort = process.env.WS_PORT || 5050;
+  const wsPort = process.env.WS_PORT || 5051;
   wsServer.listen(wsPort, () => {
     console.log(`WebSocket server running on port ${wsPort}`);
   });
@@ -38,8 +40,26 @@ try {
   console.error('WebSocket server failed to start:', e);
 }
 
-// Middleware - Static file serving
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Middleware - Static file serving with CORS headers
+app.use('/uploads', (req, res, next) => {
+  console.log(`Static file request: ${req.method} ${req.path}`);
+  // Add CORS headers for static files
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+}, express.static(path.join(__dirname, 'uploads')));
+
+// Add a test endpoint to check if files exist
+app.get('/test-upload/:filename', (req, res) => {
+  const filePath = path.join(__dirname, 'uploads', 'fica', req.params.filename);
+  console.log(`Testing file: ${filePath}`);
+  if (fs.existsSync(filePath)) {
+    res.json({ exists: true, path: filePath, absolutePath: path.resolve(filePath) });
+  } else {
+    res.json({ exists: false, path: filePath, absolutePath: path.resolve(filePath) });
+  }
+});
 
 // Add CORS test endpoint
 const corsTestRouter = require('./cors-test-endpoint');
@@ -68,6 +88,11 @@ app.get('/', (req, res) => {
 
 
 const contactRouter = require('./api/contact');
+app.use('/api/contact', contactRouter);
+
+const testEmailRouter = require('./api/test-email');
+app.use('/api/test-email', testEmailRouter);
+
 const invoiceRouter = require('./api/invoices/index');
 app.use('/api/invoices', invoiceRouter);
 
@@ -82,6 +107,7 @@ app.use('/api/users', usersRouter);
 const refundsRouter = require('./api/refunds/index');
 app.use('/api/refunds', refundsRouter);
 
+// Start the main Express server
 app.listen(PORT, () => {
-  console.log(`All4You Backend API is running on port ${PORT}`);
+  console.log(`Backend server running on port ${PORT}`);
 });
