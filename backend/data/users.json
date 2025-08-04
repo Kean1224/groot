@@ -25,7 +25,7 @@
     "email": "zadeyvdw@gmail.com",
     "password": "$2b$10$example.hash.here",
     "name": "Zadey Van Der Walt",
-    "ficaApproved": false,
+    "ficaApproved": true,
     "suspended": false,
     "registeredAt": "2025-08-03T10:00:00.000Z",
     "watchlist": [],
